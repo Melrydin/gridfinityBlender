@@ -1,56 +1,27 @@
-"""
-UI panels for Gridfinity addon
-"""
-
 import bpy
-from bpy.types import Panel
 
-
-class GRIDFINITY_PT_main_panel(Panel):
-    """Main Gridfinity panel in 3D View sidebar"""
-    bl_label = "Gridfinity"
-    bl_idname = "GRIDFINITY_PT_main_panel"
+class VIEW3D_PT_gridfinity_panel(bpy.types.Panel):
+    bl_label = "Gridfinity Generator"
+    bl_idname = "VIEW3D_PT_gridfinity"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'Gridfinity'
 
     def draw(self, context):
         layout = self.layout
+        scene = context.scene
 
-        # Title
-        layout.label(text="Gridfinity Storage Creator", icon='CUBE')
-
-        # Separator
-        layout.separator()
-
-        # Main button to create container
-        layout.operator(
-            "gridfinity.create_container",
-            text="Create Container",
-            icon='ADD'
-        )
-
-        layout.separator()
-
-        # Info section
         box = layout.box()
-        box.label(text="Info", icon='INFO')
-        box.label(text="Click 'Create Container' to get started")
+        box.label(text="Dimensions Units", icon='OBJECT_DATAMODE')
+        row = box.row()
+        row.prop(scene, "gridfinity_x", text="Width X")
+        row.prop(scene, "gridfinity_y", text="Depth Y")
 
-
-# List of all panels
-classes = [
-    GRIDFINITY_PT_main_panel,
-]
-
+        layout.separator()
+        layout.operator("gridfinity.create_container", text="Generate Baseplate", icon='MESH_GRID')
 
 def register():
-    """Register all panel classes"""
-    for cls in classes:
-        bpy.utils.register_class(cls)
-
+    bpy.utils.register_class(VIEW3D_PT_gridfinity_panel)
 
 def unregister():
-    """Unregister all panel classes"""
-    for cls in reversed(classes):
-        bpy.utils.unregister_class(cls)
+    bpy.utils.unregister_class(VIEW3D_PT_gridfinity_panel)

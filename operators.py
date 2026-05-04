@@ -1,7 +1,3 @@
-"""
-Operators for Gridfinity addon
-"""
-
 import bpy
 import bmesh
 
@@ -12,6 +8,9 @@ class GRIDFINITY_OT_create_container(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        nx = context.scene.gridfinity_x
+        ny = context.scene.gridfinity_y
+
         mesh = bpy.data.meshes.new("Gridfinity_Unit_Mesh")
         obj = bpy.data.objects.new("Gridfinity_Unit", mesh)
         context.collection.objects.link(obj)
@@ -70,23 +69,31 @@ class GRIDFINITY_OT_create_container(bpy.types.Operator):
         bm.free()
         mesh.update()
 
+        if nx > 1:
+            mod_x = obj.modifiers.new(name="Array_X", type='ARRAY')
+            mod_x.count = nx
+            mod_x.use_relative_offset = False
+            mod_x.use_constant_offset = True
+            mod_x.constant_offset_displace = (0.042, 0.0, 0.0)
+            mod_x.use_merge_vertices = True
+            mod_x.merge_threshold = 0.0001
+            bpy.ops.object.modifier_apply(modifier="Array_X")
+
+        if ny > 1:
+            mod_y = obj.modifiers.new(name="Array_Y", type='ARRAY')
+            mod_y.count = ny
+            mod_y.use_relative_offset = False
+            mod_y.use_constant_offset = True
+            mod_y.constant_offset_displace = (0.0, 0.042, 0.0)
+            mod_y.use_merge_vertices = True
+            mod_y.merge_threshold = 0.0001
+            bpy.ops.object.modifier_apply(modifier="Array_Y")
+
         self.report({'INFO'}, "Gridfinity container unit created with precise dimensions.")
         return {'FINISHED'}
 
-
-# List of all operators
-classes = [
-    GRIDFINITY_OT_create_container,
-]
-
-
 def register():
-    """Register all operator classes"""
-    for cls in classes:
-        bpy.utils.register_class(cls)
-
+    bpy.utils.register_class(GRIDFINITY_OT_create_container)
 
 def unregister():
-    """Unregister all operator classes"""
-    for cls in reversed(classes):
-        bpy.utils.unregister_class(cls)
+    bpy.utils.unregister_class(GRIDFINITY_OT_create_container)
