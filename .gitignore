@@ -1,0 +1,21 @@
+# Blender
+*.blend1
+*.blend2
+*.crash.txt
+blender.crash.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+venv/
+env/
+.env
+
+# IDE and OS settings
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
