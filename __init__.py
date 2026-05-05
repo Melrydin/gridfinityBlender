@@ -1,10 +1,10 @@
 bl_info = {
-    "name": "Gridfinity Base Generator",
+    "name": "Gridfinity Generator",
     "author": "Melrydin",
     "version": (0, 1, 1),
     "blender": (4, 5, 0),
     "location": "View3D > Sidebar > Gridfinity",
-    "description": "Generates customizable Gridfinity baseplates",
+    "description": "Generates customizable Gridfinity storage solutions",
     "category": "Object",
 }
 

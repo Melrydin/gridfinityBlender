@@ -25,7 +25,8 @@ def register():
         name="Wall Thickness mm",
         description="Thickness of the box walls in millimeters",
         default=1.2,
-        min=0.4
+        min=0.4,
+        max=2.5
     )
 
 def unregister():

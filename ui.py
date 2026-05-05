@@ -28,7 +28,8 @@ class VIEW3D_PT_gridfinity_panel(bpy.types.Panel):
         box_ui.prop(scene, "gridfinity_box_thickness", text="Thickness mm")
 
         layout.separator()
-        layout.operator("gridfinity.create_box", text="Generate Box", icon='PACKAGE')
+        layout.operator("gridfinity.create_box", text="Generate Hollow Box", icon='PACKAGE')
+        layout.operator("gridfinity.create_solid_box", text="Generate Solid Box", icon='CUBE')
 
 def register():
     bpy.utils.register_class(VIEW3D_PT_gridfinity_panel)
