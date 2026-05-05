@@ -88,8 +88,79 @@ class GRIDFINITY_OT_create_container(bpy.types.Operator):
         self.report({'INFO'}, "Gridfinity container unit created with exactly 4.75mm height.")
         return {'FINISHED'}
 
+class GRIDFINITY_OT_create_box(bpy.types.Operator):
+    """Create a new Gridfinity box on top of the baseplate"""
+    bl_idname = "gridfinity.create_box"
+    bl_label = "Create Gridfinity Box"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        nx = context.scene.gridfinity_x
+        ny = context.scene.gridfinity_y
+        height_mm = context.scene.gridfinity_box_height
+        thickness_mm = context.scene.gridfinity_box_thickness
+
+        unit_size = 0.042
+        spacing = 0.001
+        pitch = unit_size + spacing
+
+        width = unit_size + (nx - 1) * pitch
+        depth = unit_size + (ny - 1) * pitch
+        height = height_mm * 0.001
+        thickness = thickness_mm * 0.001
+        base_height = 0.00475
+
+        mesh = bpy.data.meshes.new("Gridfinity_Box_Mesh")
+        obj = bpy.data.objects.new("Gridfinity_Box", mesh)
+        context.collection.objects.link(obj)
+        context.view_layer.objects.active = obj
+        obj.select_set(True)
+
+        bm = bmesh.new()
+        bmesh.ops.create_cube(bm, size=1.0)
+
+        bmesh.ops.scale(bm, vec=(width, depth, height), verts=bm.verts)
+
+        offset_x = (nx - 1) * pitch / 2.0
+        offset_y = (ny - 1) * pitch / 2.0
+        center_z = base_height + (height / 2.0)
+        bmesh.ops.translate(bm, vec=(offset_x, offset_y, center_z), verts=bm.verts)
+
+        vertical_edges = [e for e in bm.edges if abs(e.verts[0].co.z - e.verts[1].co.z) > 0.001]
+
+        bmesh.ops.bevel(
+            bm,
+            geom=vertical_edges,
+            offset=0.0038,
+            segments=16,
+            profile=0.5,
+            affect='EDGES'
+        )
+
+        bm.verts.ensure_lookup_table()
+        bm.faces.ensure_lookup_table()
+
+        top_face = max(bm.faces, key=lambda f: f.calc_center_median().z)
+        bmesh.ops.inset_region(bm, faces=[top_face], thickness=thickness)
+
+        geom_to_extrude = [top_face] + list(top_face.edges)
+        extrude_result = bmesh.ops.extrude_face_region(bm, geom=geom_to_extrude)
+        extruded_verts = [elem for elem in extrude_result['geom'] if isinstance(elem, bmesh.types.BMVert)]
+
+        bmesh.ops.translate(bm, vec=(0.0, 0.0, -(height - thickness)), verts=extruded_verts)
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+
+        bm.to_mesh(mesh)
+        bm.free()
+        mesh.update()
+
+        self.report({'INFO'}, "Gridfinity box mit sauberen Innenwänden erstellt.")
+        return {'FINISHED'}
+
 def register():
     bpy.utils.register_class(GRIDFINITY_OT_create_container)
+    bpy.utils.register_class(GRIDFINITY_OT_create_box)
 
 def unregister():
+    bpy.utils.unregister_class(GRIDFINITY_OT_create_box)
     bpy.utils.unregister_class(GRIDFINITY_OT_create_container)
