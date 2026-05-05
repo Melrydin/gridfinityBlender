@@ -29,15 +29,6 @@ body:
     validations:
       required: true
 
-  - type: input
-    id: related_issue
-    attributes:
-      label: "Related Task / User Story"
-      description: "Link the parent Task or User Story (e.g., #123)"
-      placeholder: "#123"
-    validations:
-      required: true
-
   - type: textarea
     id: description
     attributes:
@@ -53,7 +44,7 @@ body:
       label: "Acceptance Criteria"
       description: "List the specific, testable conditions for this subtask (one per line, as `- [ ] ...`)"
       value: |-
-        - [ ] 
+        - [ ]
     validations:
       required: true
 
@@ -71,24 +62,6 @@ body:
         - [ ] Documentation updated (if applicable)
         - [ ] Code reviewed
         - [ ] Changes merged into `dev` branch
-    validations:
-      required: false
-
-  - type: input
-    id: estimated_effort
-    attributes:
-      label: "Estimated Effort (hours)"
-      description: "Rough time estimate in hours"
-      placeholder: "e.g. 3"
-    validations:
-      required: true
-
-  - type: input
-    id: actual_effort
-    attributes:
-      label: "Actual Effort (hours)"
-      description: "Actual time spent in hours"
-      placeholder: "e.g. 3"
     validations:
       required: false
 
