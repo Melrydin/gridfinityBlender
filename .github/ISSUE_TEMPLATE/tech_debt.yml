@@ -1,0 +1,94 @@
+name: "🛠️ Technical Debt"
+description: "Identify and track an area of technical debt"
+labels: ["technical-debt", "refactor"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ⚙️ Technical Debt Details
+
+        **Issue title (above):** _Provide a clear and concise summary of the technical debt, e.g., "Refactor legacy payment module"_
+
+  - type: textarea
+    id: debt_description
+    attributes:
+      label: "Description of Technical Debt"
+      description: "Clearly describe the technical debt, including where it is located in the codebase and why it's considered debt."
+      placeholder: "e.g., The `LegacyPaymentProcessor` class in `src/payments/` uses outdated libraries and lacks proper error handling."
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: "Impact of the Debt"
+      description: "What is the negative impact of this technical debt? (e.g., slows down development, causes bugs, difficult to maintain, performance issues)"
+      placeholder: "e.g., Difficult to add new payment gateways, frequent bugs related to payment processing."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: "Proposed Solution / Refactoring"
+      description: "Suggest how this technical debt could be addressed or refactored."
+      placeholder: "e.g., Rewrite the module using the new `PaymentService` interface and modern libraries. Add comprehensive unit tests."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort_estimation
+    attributes:
+      label: "Estimated Effort"
+      description: "Estimate the effort required to address this debt."
+      options:
+        - "Small (a few hours)"
+        - "Medium (a few days)"
+        - "Large (a sprint or more)"
+        - "Unknown"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "Priority"
+      description: "How urgently does this debt need to be addressed?"
+      options:
+        - "High"
+        - "Medium"
+        - "Low"
+    validations:
+      required: true
+
+  - type: input
+    id: affected_modules
+    attributes:
+      label: "Affected Module(s) / File(s) (Optional)"
+      description: "List specific modules, classes, or files affected by this debt."
+      placeholder: "e.g., src/payments/LegacyPaymentProcessor.java, src/services/OrderService.java"
+    validations:
+      required: false
+
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: "Definition of Done for Addressing Debt"
+      description: "What needs to be completed to consider this debt resolved?"
+      value: |
+        - [ ] Debt identified and understood
+        - [ ] Refactoring plan approved
+        - [ ] Code refactored according to plan
+        - [ ] Code follows style guidelines
+        - [ ] Static analysis checks pass
+        - [ ] Existing tests pass
+        - [ ] New tests added for refactored code (if applicable)
+        - [ ] Test coverage sufficient
+        - [ ] Documentation updated (if applicable)
+        - [ ] Code reviewed
+        - [ ] Changes merged
+        - [ ] Improvement verified
+    validations:
+      required: false

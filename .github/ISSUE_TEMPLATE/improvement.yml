@@ -1,0 +1,68 @@
+name: "💡 Improvement Proposal"
+description: "Suggest an improvement to an existing feature, process, or the codebase"
+labels: ["improvement"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ✨ Improvement Proposal Details
+
+        **Issue title (above):** _Provide a clear and concise summary of the improvement, e.g., "Improve performance of user search"_
+
+  - type: textarea
+    id: current_state
+    attributes:
+      label: "Current State / Behavior"
+      description: "Describe the current state or behavior that you think could be improved."
+      placeholder: "e.g., The user search currently takes 5-10 seconds for large datasets."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_improvement
+    attributes:
+      label: "Proposed Improvement"
+      description: "Describe the improvement you're suggesting. Be specific about what would change and why it's an improvement."
+      placeholder: "e.g., Optimize the database query for user search or add caching to reduce response time to under 1 second."
+    validations:
+      required: true
+
+  - type: textarea
+    id: benefits
+    attributes:
+      label: "Benefits of Improvement"
+      description: "What are the expected benefits of this improvement? (e.g., better performance, improved usability, reduced maintenance)"
+      placeholder: "e.g., Significantly faster search experience for users, reduced server load."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort_estimation
+    attributes:
+      label: "Estimated Effort"
+      description: "Roughly estimate the effort required for this improvement."
+      options:
+        - "Low (a few hours to a day)"
+        - "Medium (a few days to a week)"
+        - "High (more than a week)"
+        - "Unknown"
+    validations:
+      required: false
+
+  - type: textarea
+    id: potential_drawbacks
+    attributes:
+      label: "Potential Drawbacks or Risks (Optional)"
+      description: "Are there any potential drawbacks, risks, or trade-offs associated with this improvement?"
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: "Additional Context (Optional)"
+      description: "Add any other context, examples, or data to support your improvement proposal."
+    validations:
+      required: false

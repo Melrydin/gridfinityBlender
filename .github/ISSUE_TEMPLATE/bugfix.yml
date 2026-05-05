@@ -1,0 +1,156 @@
+name: "Bug Report"
+description: "Report a bug or defect found in the application"
+labels: ["bug", "defect"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🐞 Bug Report Details
+
+        **Issue title (above):** _Provide a clear and concise summary of the bug, e.g., "Login button unresponsive on Safari"_
+
+  - type: textarea
+    id: steps_to_reproduce
+    attributes:
+      label: "Steps to Reproduce"
+      description: "Clearly list the steps to reproduce the bug. Be as specific as possible."
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+        3. Scroll down to '....'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: "Expected Behavior"
+      description: "What did you expect to happen?"
+      placeholder: "The user should be redirected to the dashboard."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual_behavior
+    attributes:
+      label: "Actual Behavior"
+      description: "What actually happened?"
+      placeholder: "An error message '500 Internal Server Error' was displayed."
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: "Environment (OS, Browser, Version, etc.)"
+      description: "Provide details about the environment where the bug occurred."
+      placeholder: |
+        - OS: Windows 10
+        - Browser: Chrome 91.0.4472.124
+        - App Version: 1.2.3
+        - Device: Desktop
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: "Severity"
+      description: "Assess the impact of the bug."
+      options:
+        - "Critical (blocks development/testing, production outage)"
+        - "High (major functionality impacted, no workaround)"
+        - "Medium (minor functionality impacted, or major with workaround)"
+        - "Low (cosmetic issue, minimal impact)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "Priority"
+      description: "How urgently does this bug need to be fixed?"
+      options:
+        - "High"
+        - "Medium"
+        - "Low"
+    validations:
+      required: true
+
+  - type: input
+    id: affected_version
+    attributes:
+      label: "Affected Version(s)"
+      description: "Which version(s) of the software are affected by this bug?"
+      placeholder: "e.g., 1.2.0, 1.2.1"
+    validations:
+      required: false
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: "Attachments (Screenshots, Logs, etc.)"
+      description: "Provide links to screenshots, logs, or other relevant files. You can also drag and drop files directly into the issue description after creation."
+      placeholder: |
+        - [Link to Screenshot]()
+        - [Link to Log File]()
+    validations:
+      required: false
+
+  - type: input
+    id: related_issue
+    attributes:
+      label: "Related Issue (Optional)"
+      description: "Link any related issues (e.g., original feature request, duplicate bug report)"
+      placeholder: "#123"
+    validations:
+      required: false
+
+  - type: textarea
+    id: proposed_fix_or_workaround
+    attributes:
+      label: "Proposed Fix or Workaround (Optional)"
+      description: "If you have a suggestion for a fix or a temporary workaround, describe it here."
+    validations:
+      required: false
+
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: "Definition of Done for Bugfix"
+      description: "Standard checklist for completing this bugfix"
+      value: |-
+        - [ ] Root cause identified
+        - [ ] Fix implemented
+        - [ ] Code follows style guidelines
+        - [ ] Static analysis checks pass
+        - [ ] New tests added to cover the bug scenario
+        - [ ] All relevant tests pass (including regression)
+        - [ ] Test coverage sufficient
+        - [ ] Documentation updated (if applicable)
+        - [ ] Code reviewed
+        - [ ] Changes merged into `dev` (or appropriate branch)
+        - [ ] Fix verified in a test environment
+    validations:
+      required: false
+
+  - type: input
+    id: estimated_effort
+    attributes:
+      label: "Estimated Effort to Fix (hours)"
+      description: "Rough time estimate in hours"
+      placeholder: "e.g. 2"
+    validations:
+      required: false # Often estimated after initial triage
+
+  - type: input
+    id: actual_effort
+    attributes:
+      label: "Actual Effort (hours)"
+      description: "Actual time spent in hours"
+      placeholder: "e.g. 3"
+    validations:
+      required: false

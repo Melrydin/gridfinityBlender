@@ -1,0 +1,93 @@
+name: "Task"
+description: "Create a task from a user story that can be broken down into subtasks"
+labels: ["task", "component"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 📋 Task Details
+
+        **Issue title (above):** _Use a descriptive name like "Frontend Registration Form" or "Backend User Creation"_
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: "Component"
+      description: "Select the main component this task relates to"
+      options:
+        - "Frontend"
+        - "Backend"
+        - "Database"
+        - "Testing"
+        - "Documentation"
+        - "Infrastructure"
+        - "Integration"
+    validations:
+      required: true
+
+  - type: input
+    id: user_story
+    attributes:
+      label: "Parent User Story"
+      description: "Link the parent User Story (e.g., #123)"
+      placeholder: "#123"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      description: "Describe the overall task and its purpose within the user story"
+      placeholder: "This task involves implementing..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_subtasks
+    attributes:
+      label: "Proposed Subtasks"
+      description: "List the subtasks that will be created for this task (can be refined later)"
+      value: |-
+        - [ ]
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: "Task Acceptance Criteria"
+      description: "List the overall criteria for completing this task (one per line, as `- [ ] ...`)"
+      value: |-
+        - [ ] 
+    validations:
+      required: true
+
+  - type: input
+    id: estimated_effort
+    attributes:
+      label: "Estimated Effort (hours)"
+      description: "Rough time estimate in hours"
+      placeholder: "e.g. 3"
+    validations:
+      required: true
+
+  - type: input
+    id: actual_effort
+    attributes:
+      label: "Actual Effort (hours)"
+      description: "Actual time spent in hours"
+      placeholder: "e.g. 3"
+    validations:
+      required: false
+
+  - type: input
+    id: affected_components
+    attributes:
+      label: "Affected Components"
+      description: "Which parts of the codebase will be modified?"
+      placeholder: "e.g. User Controller, Registration View, User Repository"
+    validations:
+      required: false

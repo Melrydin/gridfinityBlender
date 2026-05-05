@@ -1,0 +1,56 @@
+name: "📚 Documentation Improvement"
+description: "Report an issue or suggest an improvement for the documentation"
+labels: ["documentation", "improvement"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 📖 Documentation Improvement Details
+
+        **Issue title (above):** _Provide a clear and concise summary of the documentation issue or improvement, e.g., "Clarify authentication section in API docs"_
+
+  - type: textarea
+    id: current_content
+    attributes:
+      label: "Current Documentation Content (if applicable)"
+      description: "If you're reporting an issue with existing documentation, please describe or link to the current content."
+      placeholder: "e.g., The section on 'API Authentication' currently states..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: suggested_change
+    attributes:
+      label: "Suggested Change/Improvement"
+      description: "Describe the change or improvement you'd like to see. Be specific."
+      placeholder: "e.g., I suggest adding a subsection that explains OAuth 2.0 flow with examples..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reason_for_change
+    attributes:
+      label: "Reason for Change"
+      description: "Why is this change necessary or beneficial?"
+      placeholder: "e.g., This will help new users understand the authentication process more easily."
+    validations:
+      required: true
+
+  - type: input
+    id: affected_docs_page
+    attributes:
+      label: "Affected Documentation Page(s) (Optional)"
+      description: "Link to the specific page(s) in the documentation if applicable."
+      placeholder: "e.g., /docs/api/authentication.md"
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: "Additional Context (Optional)"
+      description: "Add any other context or screenshots about the documentation improvement here."
+    validations:
+      required: false

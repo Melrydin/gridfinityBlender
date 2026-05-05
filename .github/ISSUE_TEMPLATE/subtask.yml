@@ -1,0 +1,102 @@
+name: "Subtask"
+description: "Create a sub-task from a user story or bug"
+labels: ["subtask"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 📋 Subtask Details
+
+        **Issue title (above):** _Use this to name your subtask, e.g. "Data Model: User Entity"_
+
+  - type: dropdown
+    id: task_type
+    attributes:
+      label: "Task Type"
+      description: "Select the category of this task"
+      options:
+        - "Data Model"
+        - "Service Layer"
+        - "JavaFX UI Component"
+        - "Validation"
+        - "Unit Test"
+        - "E2E Test"
+        - "Documentation"
+        - "Code Review"
+        - "Refactoring"
+    validations:
+      required: true
+
+  - type: input
+    id: related_issue
+    attributes:
+      label: "Related Task / User Story"
+      description: "Link the parent Task or User Story (e.g., #123)"
+      placeholder: "#123"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      description: "What exactly needs to be done? Outline the specific implementation steps."
+      placeholder: "- List concrete implementation steps here"
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: "Acceptance Criteria"
+      description: "List the specific, testable conditions for this subtask (one per line, as `- [ ] ...`)"
+      value: |-
+        - [ ] 
+    validations:
+      required: true
+
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: "Definition of Done"
+      description: "Standard checklist for completing this task"
+      value: |-
+        - [ ] Implementation complete
+        - [ ] Code follows style guidelines (`./gradlew spotlessApply`)
+        - [ ] Static analysis checks pass (`./gradlew checkstyleMain pmdMain spotbugsMain`)
+        - [ ] Tests added/updated and pass (`./gradlew test`)
+        - [ ] Test coverage sufficient (>= 80%) (`./gradlew jacocoTestReport`)
+        - [ ] Documentation updated (if applicable)
+        - [ ] Code reviewed
+        - [ ] Changes merged into `dev` branch
+    validations:
+      required: false
+
+  - type: input
+    id: estimated_effort
+    attributes:
+      label: "Estimated Effort (hours)"
+      description: "Rough time estimate in hours"
+      placeholder: "e.g. 3"
+    validations:
+      required: true
+
+  - type: input
+    id: actual_effort
+    attributes:
+      label: "Actual Effort (hours)"
+      description: "Actual time spent in hours"
+      placeholder: "e.g. 3"
+    validations:
+      required: false
+
+  - type: input
+    id: affected_paths
+    attributes:
+      label: "Affected Files/Paths (Optional)"
+      description: "Which files or directories will be modified?"
+      placeholder: "e.g. src/main/java/model/User.java"
+    validations:
+      required: false
