@@ -7,19 +7,19 @@ import bpy
 import bmesh
 
 
-def create_container_mesh(context):
+def create_baseplate_unit_mesh(context):
     """
-    Create a single Gridfinity container base unit restricted to 4.75mm height.
+    Create a single Gridfinity baseplate unit restricted to 4.75mm height.
     Origin is at (0, 0, 0) - center of geometry in X/Y, bottom at Z=0.
 
     Args:
         context: Blender context
 
     Returns:
-        bpy.types.Object: The created container object
+        bpy.types.Object: The created baseplate unit object
     """
-    mesh = bpy.data.meshes.new("Gridfinity_Unit_Mesh")
-    obj = bpy.data.objects.new("Gridfinity_Unit", mesh)
+    mesh = bpy.data.meshes.new("Gridfinity_Baseplate_Mesh")
+    obj = bpy.data.objects.new("Gridfinity_Baseplate", mesh)
     context.collection.objects.link(obj)
     context.view_layer.objects.active = obj
     obj.select_set(True)
@@ -82,20 +82,20 @@ def create_container_mesh(context):
     return obj
 
 
-def create_box_mesh(context, nx, ny, height_mm, thickness_mm):
+def create_bin_mesh(context, nx, ny, height_mm, thickness_mm):
     """
-    Create a Gridfinity box on top of the baseplate with inner bottom bevel.
+    Create a hollow Gridfinity bin on top of the baseplate with inner bottom bevel.
     Origin is at (0, 0, 0) - center of geometry in X/Y, bottom at Z=0.
 
     Args:
         context: Blender context
         nx: Number of units in X direction
         ny: Number of units in Y direction
-        height_mm: Box height in millimeters
-        thickness_mm: Box thickness in millimeters
+        height_mm: Bin height in millimeters
+        thickness_mm: Bin wall thickness in millimeters
 
     Returns:
-        bpy.types.Object: The created box object
+        bpy.types.Object: The created bin object
     """
     unit_size = 0.0415
     spacing = 0.001
@@ -107,8 +107,8 @@ def create_box_mesh(context, nx, ny, height_mm, thickness_mm):
     thickness = thickness_mm * 0.001
     base_height = 0.00475
 
-    mesh = bpy.data.meshes.new("Gridfinity_Box_Mesh")
-    obj = bpy.data.objects.new("Gridfinity_Box", mesh)
+    mesh = bpy.data.meshes.new("Gridfinity_Bin_Mesh")
+    obj = bpy.data.objects.new("Gridfinity_Bin", mesh)
     context.collection.objects.link(obj)
     context.view_layer.objects.active = obj
     obj.select_set(True)
@@ -168,20 +168,20 @@ def create_box_mesh(context, nx, ny, height_mm, thickness_mm):
     return obj
 
 
-def create_solid_box_mesh(context, nx, ny, height_mm, thickness_mm):
+def create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm):
     """
-    Create a solid Gridfinity box with a 2mm top rim and inner bottom bevel.
+    Create a solid Gridfinity bin with a 2mm top rim and inner bottom bevel.
     Origin is at (0, 0, 0) - center of geometry in X/Y, bottom at Z=0.
 
     Args:
         context: Blender context
         nx: Number of units in X direction
         ny: Number of units in Y direction
-        height_mm: Box height in millimeters
-        thickness_mm: Box thickness in millimeters
+        height_mm: Bin height in millimeters
+        thickness_mm: Bin wall thickness in millimeters
 
     Returns:
-        bpy.types.Object: The created solid box object
+        bpy.types.Object: The created solid bin object
     """
     unit_size = 0.0415
     spacing = 0.001
@@ -194,8 +194,8 @@ def create_solid_box_mesh(context, nx, ny, height_mm, thickness_mm):
     base_height = 0.00475
     rim_depth = 0.002
 
-    mesh = bpy.data.meshes.new("Gridfinity_Solid_Box_Mesh")
-    obj = bpy.data.objects.new("Gridfinity_Solid_Box", mesh)
+    mesh = bpy.data.meshes.new("Gridfinity_Solid_Bin_Mesh")
+    obj = bpy.data.objects.new("Gridfinity_Solid_Bin", mesh)
     context.collection.objects.link(obj)
     context.view_layer.objects.active = obj
     obj.select_set(True)
@@ -255,18 +255,18 @@ def create_solid_box_mesh(context, nx, ny, height_mm, thickness_mm):
     return obj
 
 
-def create_basegrid_mesh(context):
+def create_stacking_lip_mesh(context):
     """
-    Create full Gridfinity base profile generation with closed manifold bottom.
+    Create full Gridfinity stacking lip profile generation with closed manifold bottom.
 
     Args:
         context: Blender context
 
     Returns:
-        bpy.types.Object: The created basegrid object
+        bpy.types.Object: The created stacking lip object
     """
-    mesh = bpy.data.meshes.new("Gridfinity_Basegrid")
-    obj = bpy.data.objects.new("Gridfinity_Basegrid", mesh)
+    mesh = bpy.data.meshes.new("Gridfinity_Stacking_Lip")
+    obj = bpy.data.objects.new("Gridfinity_Stacking_Lip", mesh)
     context.collection.objects.link(obj)
 
     context.view_layer.objects.active = obj

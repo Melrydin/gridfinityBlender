@@ -1,17 +1,18 @@
 import bpy
 from . import geometry
 
-class GRIDFINITY_OT_create_container(bpy.types.Operator):
-    """Create a new Gridfinity container base unit restricted to 4.75mm height"""
-    bl_idname = "gridfinity.create_container"
-    bl_label = "Create Gridfinity Base"
+
+class GRIDFINITY_OT_create_baseplate(bpy.types.Operator):
+    """Create a Gridfinity baseplate unit restricted to 4.75mm height"""
+    bl_idname = "gridfinity.create_baseplate"
+    bl_label = "Create Gridfinity Baseplate"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         nx = context.scene.gridfinity_x
         ny = context.scene.gridfinity_y
 
-        obj = geometry.create_container_mesh(context)
+        obj = geometry.create_baseplate_unit_mesh(context)
 
         # Constants for sizing
         unit_size = 0.0415
@@ -45,76 +46,78 @@ class GRIDFINITY_OT_create_container(bpy.types.Operator):
         obj.location.x += offset_x
         obj.location.y += offset_y
 
-        self.report({'INFO'}, "Gridfinity container unit created with exactly 4.75mm height.")
+        self.report({'INFO'}, "Gridfinity baseplate created with exactly 4.75mm height.")
         return {'FINISHED'}
 
-class GRIDFINITY_OT_create_box(bpy.types.Operator):
-    """Create a new Gridfinity box on top of the baseplate with inner bottom bevel"""
-    bl_idname = "gridfinity.create_box"
-    bl_label = "Create Gridfinity Box"
+
+class GRIDFINITY_OT_create_bin(bpy.types.Operator):
+    """Create a hollow Gridfinity bin on top of the baseplate with inner bottom bevel"""
+    bl_idname = "gridfinity.create_bin"
+    bl_label = "Create Gridfinity Bin"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         nx = context.scene.gridfinity_x
         ny = context.scene.gridfinity_y
-        height_mm = context.scene.gridfinity_box_height
-        thickness_mm = context.scene.gridfinity_box_thickness
+        height_mm = context.scene.gridfinity_bin_height
+        thickness_mm = context.scene.gridfinity_bin_wall_thickness
 
-        geometry.create_box_mesh(context, nx, ny, height_mm, thickness_mm)
+        geometry.create_bin_mesh(context, nx, ny, height_mm, thickness_mm)
 
-        self.report({'INFO'}, "Gridfinity box with inner bottom bevel created.")
+        self.report({'INFO'}, "Gridfinity bin with inner bottom bevel created.")
         return {'FINISHED'}
 
 
-class GRIDFINITY_OT_create_solid_box(bpy.types.Operator):
-    """Create a solid Gridfinity box with a 2mm top rim and inner bottom bevel"""
-    bl_idname = "gridfinity.create_solid_box"
-    bl_label = "Create Solid Box"
+class GRIDFINITY_OT_create_solid_bin(bpy.types.Operator):
+    """Create a solid Gridfinity bin with a 2mm top rim and inner bottom bevel"""
+    bl_idname = "gridfinity.create_solid_bin"
+    bl_label = "Create Solid Bin"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         nx = context.scene.gridfinity_x
         ny = context.scene.gridfinity_y
-        height_mm = context.scene.gridfinity_box_height
-        thickness_mm = context.scene.gridfinity_box_thickness
+        height_mm = context.scene.gridfinity_bin_height
+        thickness_mm = context.scene.gridfinity_bin_wall_thickness
 
-        geometry.create_solid_box_mesh(context, nx, ny, height_mm, thickness_mm)
+        geometry.create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm)
 
-        self.report({'INFO'}, "Solid Gridfinity box with 2mm rim and inner bevel created.")
+        self.report({'INFO'}, "Solid Gridfinity bin with 2mm rim and inner bevel created.")
         return {'FINISHED'}
 
-class GRIDFINITY_OT_create_basegrid(bpy.types.Operator):
-    """Full Gridfinity base profile generation with closed manifold bottom"""
-    bl_idname = "gridfinity.create_basegrid"
-    bl_label = "Create Basegrid"
+
+class GRIDFINITY_OT_create_stacking_lip(bpy.types.Operator):
+    """Full Gridfinity stacking lip profile generation with closed manifold bottom"""
+    bl_idname = "gridfinity.create_stacking_lip"
+    bl_label = "Create Stacking Lip"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        geometry.create_basegrid_mesh(context)
+        geometry.create_stacking_lip_mesh(context)
 
-        self.report({'INFO'}, "Gridfinity Basegrid perfectly hollowed and bridged.")
+        self.report({'INFO'}, "Gridfinity stacking lip perfectly hollowed and bridged.")
         return {'FINISHED'}
 
 
-class GRIDFINITY_OT_create_container_with_box(bpy.types.Operator):
-    """Create a Gridfinity container with a hollow box on top"""
-    bl_idname = "gridfinity.create_container_with_box"
-    bl_label = "Container + Hollow Box"
+class GRIDFINITY_OT_create_baseplate_with_bin(bpy.types.Operator):
+    """Create a Gridfinity baseplate with a hollow bin on top"""
+    bl_idname = "gridfinity.create_baseplate_with_bin"
+    bl_label = "Baseplate + Hollow Bin"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         nx = context.scene.gridfinity_x
         ny = context.scene.gridfinity_y
-        height_mm = context.scene.gridfinity_box_height
-        thickness_mm = context.scene.gridfinity_box_thickness
+        height_mm = context.scene.gridfinity_bin_height
+        thickness_mm = context.scene.gridfinity_bin_wall_thickness
 
         # Constants for sizing
         unit_size = 0.0415
         spacing = 0.001
         pitch = unit_size + spacing  # 0.0425
 
-        # Create container
-        obj = geometry.create_container_mesh(context)
+        # Create baseplate
+        obj = geometry.create_baseplate_unit_mesh(context)
 
         # Apply array modifiers for tiling
         if nx > 1:
@@ -143,32 +146,32 @@ class GRIDFINITY_OT_create_container_with_box(bpy.types.Operator):
         obj.location.x += offset_x
         obj.location.y += offset_y
 
-        # Create box
-        geometry.create_box_mesh(context, nx, ny, height_mm, thickness_mm)
+        # Create hollow bin
+        geometry.create_bin_mesh(context, nx, ny, height_mm, thickness_mm)
 
-        self.report({'INFO'}, "Container with hollow box created.")
+        self.report({'INFO'}, "Gridfinity baseplate with hollow bin created.")
         return {'FINISHED'}
 
 
-class GRIDFINITY_OT_create_container_with_solid_box(bpy.types.Operator):
-    """Create a Gridfinity container with a solid box on top"""
-    bl_idname = "gridfinity.create_container_with_solid_box"
-    bl_label = "Container + Solid Box"
+class GRIDFINITY_OT_create_baseplate_with_solid_bin(bpy.types.Operator):
+    """Create a Gridfinity baseplate with a solid bin on top"""
+    bl_idname = "gridfinity.create_baseplate_with_solid_bin"
+    bl_label = "Baseplate + Solid Bin"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         nx = context.scene.gridfinity_x
         ny = context.scene.gridfinity_y
-        height_mm = context.scene.gridfinity_box_height
-        thickness_mm = context.scene.gridfinity_box_thickness
+        height_mm = context.scene.gridfinity_bin_height
+        thickness_mm = context.scene.gridfinity_bin_wall_thickness
 
         # Constants for sizing
         unit_size = 0.0415
         spacing = 0.001
         pitch = unit_size + spacing  # 0.0425
 
-        # Create container
-        obj = geometry.create_container_mesh(context)
+        # Create baseplate
+        obj = geometry.create_baseplate_unit_mesh(context)
 
         # Apply array modifiers for tiling
         if nx > 1:
@@ -197,25 +200,26 @@ class GRIDFINITY_OT_create_container_with_solid_box(bpy.types.Operator):
         obj.location.x += offset_x
         obj.location.y += offset_y
 
-        # Create solid box
-        geometry.create_solid_box_mesh(context, nx, ny, height_mm, thickness_mm)
+        # Create solid bin
+        geometry.create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm)
 
-        self.report({'INFO'}, "Container with solid box created.")
+        self.report({'INFO'}, "Gridfinity baseplate with solid bin created.")
         return {'FINISHED'}
+
 
 def register():
-    bpy.utils.register_class(GRIDFINITY_OT_create_container)
-    bpy.utils.register_class(GRIDFINITY_OT_create_box)
-    bpy.utils.register_class(GRIDFINITY_OT_create_solid_box)
-    bpy.utils.register_class(GRIDFINITY_OT_create_basegrid)
-    bpy.utils.register_class(GRIDFINITY_OT_create_container_with_box)
-    bpy.utils.register_class(GRIDFINITY_OT_create_container_with_solid_box)
+    bpy.utils.register_class(GRIDFINITY_OT_create_baseplate)
+    bpy.utils.register_class(GRIDFINITY_OT_create_bin)
+    bpy.utils.register_class(GRIDFINITY_OT_create_solid_bin)
+    bpy.utils.register_class(GRIDFINITY_OT_create_stacking_lip)
+    bpy.utils.register_class(GRIDFINITY_OT_create_baseplate_with_bin)
+    bpy.utils.register_class(GRIDFINITY_OT_create_baseplate_with_solid_bin)
 
 
 def unregister():
-    bpy.utils.unregister_class(GRIDFINITY_OT_create_container)
-    bpy.utils.unregister_class(GRIDFINITY_OT_create_box)
-    bpy.utils.unregister_class(GRIDFINITY_OT_create_solid_box)
-    bpy.utils.unregister_class(GRIDFINITY_OT_create_basegrid)
-    bpy.utils.unregister_class(GRIDFINITY_OT_create_container_with_box)
-    bpy.utils.unregister_class(GRIDFINITY_OT_create_container_with_solid_box)
+    bpy.utils.unregister_class(GRIDFINITY_OT_create_baseplate)
+    bpy.utils.unregister_class(GRIDFINITY_OT_create_bin)
+    bpy.utils.unregister_class(GRIDFINITY_OT_create_solid_bin)
+    bpy.utils.unregister_class(GRIDFINITY_OT_create_stacking_lip)
+    bpy.utils.unregister_class(GRIDFINITY_OT_create_baseplate_with_bin)
+    bpy.utils.unregister_class(GRIDFINITY_OT_create_baseplate_with_solid_bin)

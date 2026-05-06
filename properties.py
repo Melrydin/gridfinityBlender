@@ -1,5 +1,6 @@
 import bpy
 
+
 def register():
     bpy.types.Scene.gridfinity_x = bpy.props.IntProperty(
         name="X Units",
@@ -15,22 +16,23 @@ def register():
         min=1,
         max=50
     )
-    bpy.types.Scene.gridfinity_box_height = bpy.props.FloatProperty(
-        name="Box Height mm",
-        description="Total height of the box in millimeters",
+    bpy.types.Scene.gridfinity_bin_height = bpy.props.FloatProperty(
+        name="Bin Height mm",
+        description="Total height of the bin in millimeters",
         default=25.0,
         min=1.0
     )
-    bpy.types.Scene.gridfinity_box_thickness = bpy.props.FloatProperty(
+    bpy.types.Scene.gridfinity_bin_wall_thickness = bpy.props.FloatProperty(
         name="Wall Thickness mm",
-        description="Thickness of the box walls in millimeters",
+        description="Thickness of the bin walls in millimeters",
         default=1.2,
         min=0.4,
         max=2.5
     )
 
+
 def unregister():
     del bpy.types.Scene.gridfinity_x
     del bpy.types.Scene.gridfinity_y
-    del bpy.types.Scene.gridfinity_box_height
-    del bpy.types.Scene.gridfinity_box_thickness
+    del bpy.types.Scene.gridfinity_bin_height
+    del bpy.types.Scene.gridfinity_bin_wall_thickness
