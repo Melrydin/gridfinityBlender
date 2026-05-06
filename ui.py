@@ -30,11 +30,11 @@ class VIEW3D_PT_gridfinity_panel(bpy.types.Panel):
         layout.separator()
 
         box_comp = layout.box()
-        box_comp.label(text="Standalone Components", icon='MESH_DATA')
-        box_comp.operator("gridfinity.create_baseplate", text="Baseplate Only", icon='MESH_GRID')
-        box_comp.operator("gridfinity.create_bin", text="Hollow Bin Only", icon='MESH_CUBE')
-        box_comp.operator("gridfinity.create_solid_bin", text="Solid Bin Only", icon='CUBE')
-        box_comp.operator("gridfinity.create_stacking_lip", text="Stacking Lip", icon='MOD_EDGESPLIT')
+        box_comp.label(text="Standalone Components")
+        box_comp.operator("gridfinity.create_baseplate", text="Baseplate Only")
+        box_comp.operator("gridfinity.create_lip_array", text="Stacking Lip Array")
+        box_comp.operator("gridfinity.create_bin", text="Hollow Bin Only")
+        box_comp.operator("gridfinity.create_solid_bin", text="Solid Bin Only")
 
 
 def register():
