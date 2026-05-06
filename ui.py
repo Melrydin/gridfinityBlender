@@ -16,22 +16,24 @@ class VIEW3D_PT_gridfinity_panel(bpy.types.Panel):
         row = box_unit.row()
         row.prop(scene, "gridfinity_x", text="Width X")
         row.prop(scene, "gridfinity_y", text="Depth Y")
-        box_unit.operator("gridfinity.create_container", text="Generate Baseplate", icon='MESH_GRID')
 
         layout.separator()
 
         box_ui = layout.box()
-        box_ui.label(text="Box Settings", icon='MESH_CUBE')
+        box_ui.label(text="Complete Gridfinity", icon='PACKAGE')
         box_ui.prop(scene, "gridfinity_box_height", text="Height mm")
         box_ui.prop(scene, "gridfinity_box_thickness", text="Thickness mm")
-        box_ui.operator("gridfinity.create_box", text="Generate Hollow Box", icon='PACKAGE')
-        box_ui.operator("gridfinity.create_solid_box", text="Generate Solid Box", icon='CUBE')
+        box_ui.operator("gridfinity.create_container_with_box", text="Base + Hollow Box", icon='PACKAGE')
+        box_ui.operator("gridfinity.create_container_with_solid_box", text="Base + Solid Box", icon='CUBE')
 
         layout.separator()
 
         box_comp = layout.box()
         box_comp.label(text="Standalone Components", icon='MESH_DATA')
-        box_comp.operator("gridfinity.create_basegrid", text="Generate Stacking Lip", icon='MOD_EDGESPLIT')
+        box_comp.operator("gridfinity.create_container", text="Baseplate Only", icon='MESH_GRID')
+        box_comp.operator("gridfinity.create_box", text="Hollow Box Only", icon='MESH_CUBE')
+        box_comp.operator("gridfinity.create_solid_box", text="Solid Box Only", icon='CUBE')
+        box_comp.operator("gridfinity.create_basegrid", text="Stacking Lip", icon='MOD_EDGESPLIT')
 
 def register():
     bpy.utils.register_class(VIEW3D_PT_gridfinity_panel)

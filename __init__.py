@@ -9,6 +9,7 @@ bl_info = {
 }
 
 import bpy
+from . import geometry
 from . import properties
 from . import operators
 from . import ui
