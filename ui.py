@@ -29,6 +29,15 @@ class VIEW3D_PT_gridfinity_panel(bpy.types.Panel):
 
         layout.separator()
 
+        box_drawer = layout.box()
+        box_drawer.label(text="Drawer Fit Mode", icon='VIEW_ORTHO')
+        col = box_drawer.column(align=True)
+        col.prop(scene, "gridfinity_drawer_x", text="Max Drawer Width X")
+        col.prop(scene, "gridfinity_drawer_y", text="Max Drawer Depth Y")
+        box_drawer.operator("gridfinity.create_drawer_fitted_grid", text="Generate Fitted Grid")
+
+        layout.separator()
+
         box_comp = layout.box()
         box_comp.label(text="Standalone Components")
         box_comp.operator("gridfinity.create_baseplate", text="Baseplate Only")

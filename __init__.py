@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Gridfinity Generator",
     "author": "Melrydin",
-    "version": (0, 1, 1),
+    "version": (0, 1, 2),
     "blender": (4, 5, 0),
     "location": "View3D > Sidebar > Gridfinity",
     "description": "Generates customizable Gridfinity storage solutions",

@@ -29,6 +29,18 @@ def register():
         min=0.4,
         max=2.5
     )
+    bpy.types.Scene.gridfinity_drawer_x = bpy.props.FloatProperty(
+        name="Drawer X mm",
+        description="Maximum X dimension of the drawer",
+        default=250.0,
+        min=42.0
+    )
+    bpy.types.Scene.gridfinity_drawer_y = bpy.props.FloatProperty(
+        name="Drawer Y mm",
+        description="Maximum Y dimension of the drawer",
+        default=250.0,
+        min=42.0
+    )
 
 
 def unregister():
@@ -36,3 +48,5 @@ def unregister():
     del bpy.types.Scene.gridfinity_y
     del bpy.types.Scene.gridfinity_bin_height
     del bpy.types.Scene.gridfinity_bin_wall_thickness
+    del bpy.types.Scene.gridfinity_drawer_x
+    del bpy.types.Scene.gridfinity_drawer_y
