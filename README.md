@@ -25,6 +25,12 @@ The Gridfinity organizational system was invented by Zack Freedman. You can find
 * **Hollow Bin Only:** Generates the raw bin walls and inner bottom bevel without the baseplate.
 * **Solid Bin Only:** Generates a solid block bin with the top stacking rim without the baseplate.
 
+### 5. Export Utilities
+* **Batch Export STL:** A one click export solution for all generated Gridfinity objects in the current scene.
+* **Smart Grouping:** Automatically merges overlapping components like a baseplate and a bin into a single STL file based on their exact geometric center.
+* **Auto Naming:** Generates descriptive filenames automatically without requiring manual input.
+* **Modern API Support:** Dynamically switches between the native C++ STL exporter in Blender 4.1 and newer and the legacy Python exporter for older versions.
+
 ## Installation
 1. Pack the addon folder into a ZIP archive.
 2. Open Blender and navigate to Edit > Preferences > Addons.

@@ -45,6 +45,13 @@ class VIEW3D_PT_gridfinity_panel(bpy.types.Panel):
         box_comp.operator("gridfinity.create_bin", text="Hollow Bin Only")
         box_comp.operator("gridfinity.create_solid_bin", text="Solid Bin Only")
 
+        layout.separator()
+
+        box_export = layout.box()
+        box_export.label(text="Export Utilities", icon='EXPORT')
+        box_export.prop(scene, "gridfinity_export_path", text="Folder")
+        box_export.operator("gridfinity.batch_export", text="Batch Export STL", icon='MESH_CUBE')
+
 
 def register():
     bpy.utils.register_class(VIEW3D_PT_gridfinity_panel)

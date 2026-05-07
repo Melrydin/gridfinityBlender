@@ -360,3 +360,17 @@ def create_stacking_lip_mesh(context):
     mesh.update()
 
     return obj
+
+
+def center_origin_to_bounds(context, obj):
+    """
+    Sets the origin of the given object to the center of its bounding box.
+
+    Args:
+        context: Blender context
+        obj: The object to center
+    """
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    context.view_layer.objects.active = obj
+    bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')

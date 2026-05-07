@@ -41,6 +41,12 @@ def register():
         default=250.0,
         min=42.0
     )
+    bpy.types.Scene.gridfinity_export_path = bpy.props.StringProperty(
+        name="Export Path",
+        description="Directory to export the STL files",
+        subtype='DIR_PATH',
+        default="//"
+    )
 
 
 def unregister():

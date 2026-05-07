@@ -15,7 +15,10 @@ class GRIDFINITY_OT_create_bin(bpy.types.Operator):
         height_mm = context.scene.gridfinity_bin_height
         thickness_mm = context.scene.gridfinity_bin_wall_thickness
 
-        geometry.create_bin_mesh(context, nx, ny, height_mm, thickness_mm)
+        obj = geometry.create_bin_mesh(context, nx, ny, height_mm, thickness_mm)
+        obj.name = f"Gridfinity_Box_{nx}x{ny}_H{int(height_mm)}"
+
+        geometry.center_origin_to_bounds(context, obj)
 
         self.report({'INFO'}, "Gridfinity bin with inner bottom bevel created.")
         return {'FINISHED'}
@@ -33,7 +36,9 @@ class GRIDFINITY_OT_create_solid_bin(bpy.types.Operator):
         height_mm = context.scene.gridfinity_bin_height
         thickness_mm = context.scene.gridfinity_bin_wall_thickness
 
-        geometry.create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm)
+        obj = geometry.create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm)
+
+        geometry.center_origin_to_bounds(context, obj)
 
         self.report({'INFO'}, "Solid Gridfinity bin with 2mm rim and inner bevel created.")
         return {'FINISHED'}
@@ -46,7 +51,9 @@ class GRIDFINITY_OT_create_stacking_lip(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        geometry.create_stacking_lip_mesh(context)
+        obj = geometry.create_stacking_lip_mesh(context)
+
+        geometry.center_origin_to_bounds(context, obj)
 
         self.report({'INFO'}, "Gridfinity stacking lip perfectly hollowed and bridged.")
         return {'FINISHED'}
@@ -95,6 +102,9 @@ class GRIDFINITY_OT_create_baseplate(bpy.types.Operator):
         offset_y = -(ny - 1) * pitch / 2.0
         obj.location.x += offset_x
         obj.location.y += offset_y
+        obj.name = f"Gridfinity_Baseplate_{nx}x{ny}"
+
+        geometry.center_origin_to_bounds(context, obj)
 
         self.report({'INFO'}, "Gridfinity baseplate created with exactly 4.75mm height.")
         return {'FINISHED'}
@@ -148,7 +158,12 @@ class GRIDFINITY_OT_create_baseplate_with_bin(bpy.types.Operator):
         obj.location.y += offset_y
 
         # Create hollow bin
-        geometry.create_bin_mesh(context, nx, ny, height_mm, thickness_mm)
+        bin_obj = geometry.create_bin_mesh(context, nx, ny, height_mm, thickness_mm)
+        obj.name = f"Gridfinity_Baseplate_{nx}x{ny}"
+        bin_obj.name = f"Gridfinity_Complete_Box_{nx}x{ny}_H{int(height_mm)}"
+
+        geometry.center_origin_to_bounds(context, obj)
+        geometry.center_origin_to_bounds(context, bin_obj)
 
         self.report({'INFO'}, "Gridfinity baseplate with hollow bin created.")
         return {'FINISHED'}
@@ -201,8 +216,15 @@ class GRIDFINITY_OT_create_baseplate_with_solid_bin(bpy.types.Operator):
         obj.location.x += offset_x
         obj.location.y += offset_y
 
+
+
         # Create solid bin
-        geometry.create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm)
+        bin_obj = geometry.create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm)
+        obj.name = f"Gridfinity_Baseplate_{nx}x{ny}"
+        bin_obj.name = f"Gridfinity_Complete_SolidBox_{nx}x{ny}_H{int(height_mm)}"
+
+        geometry.center_origin_to_bounds(context, obj)
+        geometry.center_origin_to_bounds(context, bin_obj)
 
         self.report({'INFO'}, "Gridfinity baseplate with solid bin created.")
         return {'FINISHED'}
@@ -310,6 +332,10 @@ class GRIDFINITY_OT_create_stacking_lip_array(bpy.types.Operator):
         obj.location.x += offset_x
         obj.location.y += offset_y
 
+        geometry.center_origin_to_bounds(context, obj)
+
+        obj.name = f"Gridfinity_Lip_{nx}x{ny}"
+
         self.report({'INFO'}, f"Stacking Lip Array ({nx}x{ny}) created.")
         return {'FINISHED'}
 
@@ -386,6 +412,10 @@ class GRIDFINITY_OT_create_drawer_fitted_grid(bpy.types.Operator):
         # Center the cut grid back to the origin
         grid_obj.location.x -= drawer_x / 2.0
         grid_obj.location.y -= drawer_y / 2.0
+
+        geometry.center_origin_to_bounds(context, grid_obj)
+
+
 
         self.report({'INFO'}, f"Fitted Grid created and cut to {drawer_x * 1000} x {drawer_y * 1000} mm.")
         return {'FINISHED'}
