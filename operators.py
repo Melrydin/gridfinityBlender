@@ -1,7 +1,6 @@
 import bpy
 from . import geometry
 import math
-import mathutils
 
 
 class GRIDFINITY_OT_create_bin(bpy.types.Operator):
@@ -72,12 +71,10 @@ class GRIDFINITY_OT_create_baseplate(bpy.types.Operator):
 
         obj = geometry.create_baseplate_unit_mesh(context)
 
-        # Constants for sizing
         unit_size = 0.0415
         spacing = 0.001
         pitch = unit_size + spacing  # 0.0425
 
-        # Apply array modifiers for tiling
         if nx > 1:
             mod_x = obj.modifiers.new(name="Array_X", type='ARRAY')
             mod_x.count = nx
@@ -98,7 +95,6 @@ class GRIDFINITY_OT_create_baseplate(bpy.types.Operator):
             mod_y.merge_threshold = 0.0001
             bpy.ops.object.modifier_apply(modifier="Array_Y")
 
-        # Center the entire object around origin
         offset_x = -(nx - 1) * pitch / 2.0
         offset_y = -(ny - 1) * pitch / 2.0
         obj.location.x += offset_x
@@ -123,15 +119,12 @@ class GRIDFINITY_OT_create_baseplate_with_bin(bpy.types.Operator):
         height_mm = context.scene.gridfinity_bin_height
         thickness_mm = context.scene.gridfinity_bin_wall_thickness
 
-        # Constants for sizing
         unit_size = 0.0415
         spacing = 0.001
         pitch = unit_size + spacing  # 0.0425
 
-        # Create baseplate
         obj = geometry.create_baseplate_unit_mesh(context)
 
-        # Apply array modifiers for tiling
         if nx > 1:
             mod_x = obj.modifiers.new(name="Array_X", type='ARRAY')
             mod_x.count = nx
@@ -152,13 +145,11 @@ class GRIDFINITY_OT_create_baseplate_with_bin(bpy.types.Operator):
             mod_y.merge_threshold = 0.0001
             bpy.ops.object.modifier_apply(modifier="Array_Y")
 
-        # Center the entire object around origin
         offset_x = -(nx - 1) * pitch / 2.0
         offset_y = -(ny - 1) * pitch / 2.0
         obj.location.x += offset_x
         obj.location.y += offset_y
 
-        # Create hollow bin
         bin_obj = geometry.create_bin_mesh(context, nx, ny, height_mm, thickness_mm)
         obj.name = f"Gridfinity_Baseplate_{nx}x{ny}"
         bin_obj.name = f"Gridfinity_Complete_Box_{nx}x{ny}_H{int(height_mm)}"
@@ -182,15 +173,12 @@ class GRIDFINITY_OT_create_baseplate_with_solid_bin(bpy.types.Operator):
         height_mm = context.scene.gridfinity_bin_height
         thickness_mm = context.scene.gridfinity_bin_wall_thickness
 
-        # Constants for sizing
         unit_size = 0.0415
         spacing = 0.001
         pitch = unit_size + spacing  # 0.0425
 
-        # Create baseplate
         obj = geometry.create_baseplate_unit_mesh(context)
 
-        # Apply array modifiers for tiling
         if nx > 1:
             mod_x = obj.modifiers.new(name="Array_X", type='ARRAY')
             mod_x.count = nx
@@ -211,15 +199,11 @@ class GRIDFINITY_OT_create_baseplate_with_solid_bin(bpy.types.Operator):
             mod_y.merge_threshold = 0.0001
             bpy.ops.object.modifier_apply(modifier="Array_Y")
 
-        # Center the entire object around origin
         offset_x = -(nx - 1) * pitch / 2.0
         offset_y = -(ny - 1) * pitch / 2.0
         obj.location.x += offset_x
         obj.location.y += offset_y
 
-
-
-        # Create solid bin
         bin_obj = geometry.create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm)
         obj.name = f"Gridfinity_Baseplate_{nx}x{ny}"
         bin_obj.name = f"Gridfinity_Complete_SolidBox_{nx}x{ny}_H{int(height_mm)}"
@@ -370,15 +354,12 @@ class GRIDFINITY_OT_create_drawer_fitted_grid(bpy.types.Operator):
         cutter = context.active_object
         cutter.name = "Drawer_Cutter_Temp"
 
-        # Erweitere den Cutter um 10mm in den negativen Bereich, um Z-Fighting zu verhindern.
-        # Die positiven Kanten schließen exakt mit drawer_x und drawer_y ab.
         size_x = (drawer_x * 0.001) + 1.0
         size_y = (drawer_y * 0.001) + 1.0
         size_z = 1.0
 
         cutter.scale = (size_x, size_y, size_z)
 
-        # Position berechnen: Min=-10.0, Max=drawer_x
         cutter.location.x = ((drawer_x * 0.001)  - 1.0) / 2.0
         cutter.location.y = ((drawer_y * 0.001) - 1.0) / 2.0
         cutter.location.z = 0.0

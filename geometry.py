@@ -1,8 +1,3 @@
-"""
-Geometry generation functions for Gridfinity objects.
-Handles all mesh creation and manipulation logic.
-"""
-
 import bpy
 import bmesh
 import os
@@ -28,13 +23,9 @@ def create_baseplate_unit_mesh(context):
     bm = bmesh.new()
     bmesh.ops.create_cube(bm, size=1.0)
 
-    # Identify vertical edges before scaling to avoid floating point precision issues
     vertical_edges = [e for e in bm.edges if abs(e.verts[0].co.z - e.verts[1].co.z) > 0.5]
 
-    # Scale to correct X and Y but use minimal Z thickness for top face creation
     bmesh.ops.scale(bm, vec=(0.0415, 0.0415, 0.00001), verts=bm.verts)
-
-    # Translate to position Z at bottom (not +0.00475)
     bmesh.ops.translate(bm, vec=(0.0, 0.0, 0.0), verts=bm.verts)
 
     bmesh.ops.bevel(
@@ -64,10 +55,8 @@ def create_baseplate_unit_mesh(context):
         for vert in bottom_face.verts:
             vert.co.z -= 0.0008
 
-    # Merge the micro thickness to create a perfectly flat solid top face
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.00005)
 
-    # Zero out the precise height to align perfectly with the floor
     min_z = min(v.co.z for v in bm.verts)
     bmesh.ops.translate(bm, vec=(0.0, 0.0, -min_z), verts=bm.verts)
 
@@ -119,7 +108,6 @@ def create_bin_mesh(context, nx, ny, height_mm, thickness_mm):
 
     bmesh.ops.scale(bm, vec=(width, depth, height), verts=bm.verts)
 
-    # Position at Z=0 bottom, centered X/Y at origin
     center_z = base_height + (height / 2.0)
     bmesh.ops.translate(bm, vec=(0.0, 0.0, center_z), verts=bm.verts)
 
@@ -206,7 +194,6 @@ def create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm):
 
     bmesh.ops.scale(bm, vec=(width, depth, height), verts=bm.verts)
 
-    # Position at Z=0 bottom, centered X/Y at origin
     center_z = base_height + (height / 2.0)
     bmesh.ops.translate(bm, vec=(0.0, 0.0, center_z), verts=bm.verts)
 
@@ -255,6 +242,7 @@ def create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm):
 
     return obj
 
+
 def center_origin_to_bounds(context, obj):
     """
     Sets the origin of the given object to the center of its bounding box.
@@ -267,6 +255,7 @@ def center_origin_to_bounds(context, obj):
     obj.select_set(True)
     context.view_layer.objects.active = obj
     bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+
 
 def load_reference_object(context, filename):
     addon_dir = os.path.dirname(__file__)
