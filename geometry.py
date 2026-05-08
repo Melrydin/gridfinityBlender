@@ -5,6 +5,7 @@ Handles all mesh creation and manipulation logic.
 
 import bpy
 import bmesh
+import os
 
 
 def create_baseplate_unit_mesh(context):
@@ -254,114 +255,6 @@ def create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm):
 
     return obj
 
-
-def create_stacking_lip_mesh(context):
-    """
-    Create full Gridfinity stacking lip profile generation with closed manifold bottom.
-
-    Args:
-        context: Blender context
-
-    Returns:
-        bpy.types.Object: The created stacking lip object
-    """
-    mesh = bpy.data.meshes.new("Gridfinity_Stacking_Lip")
-    obj = bpy.data.objects.new("Gridfinity_Stacking_Lip", mesh)
-    context.collection.objects.link(obj)
-
-    context.view_layer.objects.active = obj
-    obj.select_set(True)
-
-    bm = bmesh.new()
-
-    bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=0.021)
-    bmesh.ops.bevel(bm, geom=bm.verts, offset=0.008, segments=32, profile=0.5, affect='VERTICES')
-
-    bm.faces.ensure_lookup_table()
-    bottom_face = bm.faces[0]
-
-    res = bmesh.ops.extrude_face_region(bm, geom=[bottom_face])
-    ext_verts = [v for v in res['geom'] if isinstance(v, bmesh.types.BMVert)]
-    bmesh.ops.translate(bm, vec=(0.0, 0.0, 0.005), verts=ext_verts)
-
-    top_face = [f for f in bm.faces if all(v in ext_verts for v in f.verts) and f.normal.z > 0.5][0]
-
-    bmesh.ops.inset_region(bm, faces=[top_face], thickness=0.00215)
-    bmesh.ops.translate(bm, vec=(0.0, 0.0, -0.00215), verts=top_face.verts)
-
-    bm.faces.ensure_lookup_table()
-
-    bottom_faces = [f for f in bm.faces if abs(f.calc_center_median().z) < 0.0001]
-
-    bmesh.ops.delete(bm, geom=bottom_faces, context='FACES')
-
-    bm.faces.ensure_lookup_table()
-
-    horizontal_faces = [f for f in bm.faces if abs(f.normal.z) > 0.5]
-
-    if horizontal_faces:
-
-        top_face = max(horizontal_faces, key=lambda f: f.calc_area())
-
-        res = bmesh.ops.extrude_face_region(bm, geom=[top_face])
-        ext_verts = [v for v in res['geom'] if isinstance(v, bmesh.types.BMVert)]
-        bmesh.ops.translate(bm, vec=(0.0, 0.0, -0.0018), verts=ext_verts)
-
-        bmesh.ops.delete(bm, geom=[top_face], context='FACES')
-
-    horizontal_faces = [f for f in bm.faces if abs(f.normal.z) > 0.5]
-
-    if horizontal_faces:
-
-        top_face = max(horizontal_faces, key=lambda f: f.calc_area())
-
-        res = bmesh.ops.extrude_face_region(bm, geom=[top_face])
-        ext_verts = [v for v in res['geom'] if isinstance(v, bmesh.types.BMVert)]
-        current_z = ext_verts[0].co.z
-        bmesh.ops.translate(bm, vec=(0.0, 0.0, -current_z), verts=ext_verts)
-
-        bmesh.ops.delete(bm, geom=[top_face], context='FACES')
-
-    bm.faces.ensure_lookup_table()
-    bm.normal_update()
-
-    horizontal_faces = [f for f in bm.faces if abs(f.normal.z) > 0.5]
-
-    if horizontal_faces:
-        top_face = max(horizontal_faces, key=lambda f: f.calc_area())
-
-        inner_edges = [e for e in top_face.edges if e.calc_length() < 0.040]
-
-        bmesh.ops.bevel(
-            bm,
-            geom=inner_edges,
-            offset=0.0008,
-            segments=1,
-            profile=0.5,
-            affect='EDGES'
-        )
-
-    horizontal_faces = [f for f in bm.faces if abs(f.normal.z) > 0.5]
-
-    if horizontal_faces:
-        top_face = max(horizontal_faces, key=lambda f: f.calc_area())
-        bmesh.ops.delete(bm, geom=[top_face], context='FACES')
-
-    bm.edges.ensure_lookup_table()
-    bottom_edges = [e for e in bm.edges if abs(e.verts[0].co.z) < 0.0001 and abs(e.verts[1].co.z) < 0.0001]
-
-    if len(bottom_edges) > 0:
-        bmesh.ops.bridge_loops(bm, edges=bottom_edges)
-
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-
-    bm.to_mesh(mesh)
-    bm.free()
-    mesh.update()
-
-    return obj
-
-
 def center_origin_to_bounds(context, obj):
     """
     Sets the origin of the given object to the center of its bounding box.
@@ -374,3 +267,24 @@ def center_origin_to_bounds(context, obj):
     obj.select_set(True)
     context.view_layer.objects.active = obj
     bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+
+def load_reference_object(context, filename):
+    addon_dir = os.path.dirname(__file__)
+    filepath = os.path.join(addon_dir, "geometry", filename)
+
+    if not os.path.exists(filepath):
+        print(f"Error: File missing: {filename}")
+        return None
+
+    bpy.ops.object.select_all(action='DESELECT')
+    bpy.ops.wm.obj_import(filepath=filepath)
+
+    if not context.selected_objects:
+        return None
+
+    obj = context.selected_objects[0]
+    context.view_layer.objects.active = obj
+
+    bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+
+    return obj

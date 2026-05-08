@@ -41,7 +41,7 @@ class VIEW3D_PT_gridfinity_panel(bpy.types.Panel):
         box_comp = layout.box()
         box_comp.label(text="Standalone Components")
         box_comp.operator("gridfinity.create_baseplate", text="Baseplate Only")
-        box_comp.operator("gridfinity.create_lip_array", text="Stacking Lip Array")
+        box_comp.operator("gridfinity.create_stacking_lip_array", text="Stacking Lip Array")
         box_comp.operator("gridfinity.create_bin", text="Hollow Bin Only")
         box_comp.operator("gridfinity.create_solid_bin", text="Solid Bin Only")
 

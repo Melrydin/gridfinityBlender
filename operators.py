@@ -1,7 +1,8 @@
 import bpy
 from . import geometry
-import bmesh
 import math
+import mathutils
+
 
 class GRIDFINITY_OT_create_bin(bpy.types.Operator):
     """Create a hollow Gridfinity bin on top of the baseplate with inner bottom bevel"""
@@ -231,193 +232,172 @@ class GRIDFINITY_OT_create_baseplate_with_solid_bin(bpy.types.Operator):
 
 
 class GRIDFINITY_OT_create_stacking_lip_array(bpy.types.Operator):
-    """Create a Stacking Lip Array merged into a single mesh"""
-    bl_idname = "gridfinity.create_lip_array"
+    """Generate grid array using Marching Squares neighbor logic with debug grid"""
+    bl_idname = "gridfinity.create_stacking_lip_array"
     bl_label = "Create Stacking Lip Array"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         nx = context.scene.gridfinity_x
         ny = context.scene.gridfinity_y
+
         pitch = 0.042
 
-        obj = geometry.create_stacking_lip_mesh(context)
-        bm = bmesh.new()
-        bm.from_mesh(obj.data)
-        edges_to_delete = [e for e in bm.edges if abs(e.verts[0].co.z - e.verts[1].co.z) > 0.003]
-        bmesh.ops.delete(bm, geom=edges_to_delete, context='EDGES')
-        bm.to_mesh(obj.data)
-        bm.free()
+        obj_l = geometry.load_reference_object(context, "baseplate_L.obj")
+        obj_t = geometry.load_reference_object(context, "baseplate_T.obj")
+        obj_x = geometry.load_reference_object(context, "baseplate_X.obj")
 
-        if nx > 1:
-            mod_x = obj.modifiers.new(name="Array_X", type='ARRAY')
-            mod_x.count = nx
-            mod_x.use_relative_offset = False
-            mod_x.use_constant_offset = True
-            mod_x.constant_offset_displace = (pitch, 0.0, 0.0)
-            mod_x.use_merge_vertices = True
-            mod_x.merge_threshold = 0.00001
-            bpy.ops.object.modifier_apply(modifier="Array_X")
+        if not obj_l or not obj_t or not obj_x:
+            self.report({'ERROR'}, "OBJ files missing")
+            return {'CANCELLED'}
 
-        if ny > 1:
-            mod_y = obj.modifiers.new(name="Array_Y", type='ARRAY')
-            mod_y.count = ny
-            mod_y.use_relative_offset = False
-            mod_y.use_constant_offset = True
-            mod_y.constant_offset_displace = (0.0, pitch, 0.0)
-            mod_y.use_merge_vertices = True
-            mod_y.merge_threshold = 0.00001
-            bpy.ops.object.modifier_apply(modifier="Array_Y")
+        grid = [[True for _ in range(ny)] for _ in range(nx)]
 
-        bm = bmesh.new()
-        bm.from_mesh(obj.data)
-        bm.edges.ensure_lookup_table()
+        def cell_exists(cx, cy):
+            if 0 <= cx < nx and 0 <= cy < ny:
+                return grid[cx][cy]
+            return False
 
-        boundary_edges = [e for e in bm.edges if e.is_boundary]
+        array_parts = []
 
-        edge_loops = []
-        remaining_edges = set(boundary_edges)
+        for x in range(nx + 1):
+            for y in range(ny + 1):
+                tr = cell_exists(x, y)
+                tl = cell_exists(x - 1, y)
+                bl = cell_exists(x - 1, y - 1)
+                br = cell_exists(x, y - 1)
 
-        while remaining_edges:
-            edge = remaining_edges.pop()
-            loop = [edge]
+                state = (tr, tl, bl, br)
 
-            for i in range(2):
-                current_v = edge.verts[i]
-                while True:
-                    next_edge = None
-                    for connected_edge in current_v.link_edges:
-                        if connected_edge in remaining_edges:
-                            next_edge = connected_edge
-                            break
-                    if next_edge:
-                        loop.append(next_edge)
-                        remaining_edges.remove(next_edge)
-                        current_v = next_edge.other_vert(current_v)
-                    else:
-                        break
-            edge_loops.append(loop)
+                source_obj = None
+                rotation_z = 0.0
 
-        max_hole_size = 0.035
+                if state == (True, False, False, False):
+                    source_obj = obj_l
+                    rotation_z = math.radians(180)
+                elif state == (False, True, False, False):
+                    source_obj = obj_l
+                    rotation_z = math.radians(-90)
+                elif state == (False, False, True, False):
+                    source_obj = obj_l
+                    rotation_z = math.radians(0)
+                elif state == (False, False, False, True):
+                    source_obj = obj_l
+                    rotation_z = math.radians(90)
+                elif state == (True, True, False, False):
+                    source_obj = obj_t
+                    rotation_z = math.radians(180)
+                elif state == (False, True, True, False):
+                    source_obj = obj_t
+                    rotation_z = math.radians(-90)
+                elif state == (False, False, True, True):
+                    source_obj = obj_t
+                    rotation_z = math.radians(0)
+                elif state == (True, False, False, True):
+                    source_obj = obj_t
+                    rotation_z = math.radians(90)
+                elif state == (True, True, True, True):
+                    source_obj = obj_x
+                    rotation_z = math.radians(0)
+                elif state == (False, False, False, False):
+                    continue
 
-        for loop in edge_loops:
-            verts_in_loop = list(set(v for e in loop for v in e.verts))
-            coords = [v.co for v in verts_in_loop]
+                if source_obj:
+                    new_obj = source_obj.copy()
+                    new_obj.data = source_obj.data.copy()
+                    context.collection.objects.link(new_obj)
 
-            min_x = min(c.x for c in coords)
-            max_x = max(c.x for c in coords)
-            min_y = min(c.y for c in coords)
-            max_y = max(c.y for c in coords)
+                    new_obj.location = (x * pitch, y * pitch, 0.0)
+                    new_obj.rotation_euler = (0.0, 0.0, rotation_z)
 
-            size_x = max_x - min_x
-            size_y = max_y - min_y
+                    array_parts.append(new_obj)
 
-            if size_x < max_hole_size and size_y < max_hole_size:
-                bmesh.ops.contextual_create(bm, geom=loop)
+        bpy.data.objects.remove(obj_l, do_unlink=True)
+        bpy.data.objects.remove(obj_t, do_unlink=True)
+        bpy.data.objects.remove(obj_x, do_unlink=True)
 
-        bm.edges.ensure_lookup_table()
+        if not array_parts:
+            return {'CANCELLED'}
 
-        boundary_edges = [e for e in bm.edges if e.is_boundary]
+        bpy.ops.object.select_all(action='DESELECT')
+        for part in array_parts:
+            part.select_set(True)
 
-        if boundary_edges:
-            bmesh.ops.bridge_loops(bm, edges=boundary_edges)
+        context.view_layer.objects.active = array_parts[0]
+        bpy.ops.object.join()
 
-        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        final_obj = context.active_object
+        final_obj.name = f"Gridfinity_Lip_Array_{nx}x{ny}"
 
-        bm.to_mesh(obj.data)
-        bm.free()
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.ops.mesh.remove_doubles(threshold=0.0001)
+        bpy.ops.object.mode_set(mode='OBJECT')
 
-        offset_x = -(nx - 1) * pitch / 2.0
-        offset_y = -(ny - 1) * pitch / 2.0
-        obj.location.x += offset_x
-        obj.location.y += offset_y
+        geometry.center_origin_to_bounds(context, final_obj)
 
-        geometry.center_origin_to_bounds(context, obj)
-
-        obj.name = f"Gridfinity_Lip_{nx}x{ny}"
-
-        self.report({'INFO'}, f"Stacking Lip Array ({nx}x{ny}) created.")
+        self.report({'INFO'}, f"Merged array {nx}x{ny} generated successfully")
         return {'FINISHED'}
 
 
 class GRIDFINITY_OT_create_drawer_fitted_grid(bpy.types.Operator):
-    """Generates a grid and cuts it exactly to the drawer dimensions on the far sides"""
+    """Creates a grid and cuts it to the exact drawer dimensions"""
     bl_idname = "gridfinity.create_drawer_fitted_grid"
-    bl_label = "Create Drawer Fitted Grid"
+    bl_label = "Create Fitted Drawer Grid"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        drawer_x = context.scene.gridfinity_drawer_x * 0.001
-        drawer_y = context.scene.gridfinity_drawer_y * 0.001
-        pitch = 0.042
+        drawer_x = context.scene.gridfinity_drawer_x
+        drawer_y = context.scene.gridfinity_drawer_y
+        pitch = 42.0
 
-        # Calculate the maximum required grid units by rounding up
-        nx = math.ceil(drawer_x / pitch)
-        ny = math.ceil(drawer_y / pitch)
+        nx = int((drawer_x / pitch) + 1)
+        ny = int((drawer_y / pitch) + 1)
 
-        # Store the original grid values
-        orig_nx = context.scene.gridfinity_x
-        orig_ny = context.scene.gridfinity_y
-
-        # Override the values for the array operator
+        old_x = context.scene.gridfinity_x
+        old_y = context.scene.gridfinity_y
         context.scene.gridfinity_x = nx
         context.scene.gridfinity_y = ny
 
-        # Call the existing array operator
-        bpy.ops.gridfinity.create_lip_array()
+        bpy.ops.gridfinity.create_stacking_lip_array()
 
-        # Reference the newly created grid object
         grid_obj = context.active_object
 
-        # Restore original values
-        context.scene.gridfinity_x = orig_nx
-        context.scene.gridfinity_y = orig_ny
+        context.scene.gridfinity_x = old_x
+        context.scene.gridfinity_y = old_y
 
-        # Move grid so the bottom left corner is exactly at X=0, Y=0
-        grid_min_x = -(nx - 1) * pitch / 2.0 - 0.021
-        grid_min_y = -(ny - 1) * pitch / 2.0 - 0.021
-        grid_obj.location.x -= grid_min_x
-        grid_obj.location.y -= grid_min_y
-
-        # Create cutter object
         bpy.ops.mesh.primitive_cube_add(size=1.0)
         cutter = context.active_object
-        cutter.name = "Gridfinity_Drawer_Cutter"
-        cutter.display_type = 'WIRE'
+        cutter.name = "Drawer_Cutter_Temp"
 
-        # Scale cutter to drawer dimensions and ensure enough height for the cut
-        bm_cutter = bmesh.new()
-        bm_cutter.from_mesh(cutter.data)
-        bmesh.ops.scale(bm_cutter, vec=(drawer_x, drawer_y, 0.1), verts=bm_cutter.verts)
-        bm_cutter.to_mesh(cutter.data)
-        bm_cutter.free()
+        # Erweitere den Cutter um 10mm in den negativen Bereich, um Z-Fighting zu verhindern.
+        # Die positiven Kanten schließen exakt mit drawer_x und drawer_y ab.
+        size_x = (drawer_x * 0.001) + 1.0
+        size_y = (drawer_y * 0.001) + 1.0
+        size_z = 1.0
 
-        # Move cutter so its bottom left corner is also at X=0, Y=0
-        cutter.location.x = drawer_x / 2.0
-        cutter.location.y = drawer_y / 2.0
+        cutter.scale = (size_x, size_y, size_z)
 
-        # Apply boolean modifier to the grid for intersection
+        # Position berechnen: Min=-10.0, Max=drawer_x
+        cutter.location.x = ((drawer_x * 0.001)  - 1.0) / 2.0
+        cutter.location.y = ((drawer_y * 0.001) - 1.0) / 2.0
+        cutter.location.z = 0.0
+
+        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+        context.view_layer.objects.active = grid_obj
         bool_mod = grid_obj.modifiers.new(name="Drawer_Cut", type='BOOLEAN')
         bool_mod.operation = 'INTERSECT'
         bool_mod.object = cutter
         bool_mod.solver = 'EXACT'
 
-        # Apply the modifier
-        context.view_layer.objects.active = grid_obj
-        bpy.ops.object.modifier_apply(modifier=bool_mod.name)
+        bpy.ops.object.modifier_apply(modifier="Drawer_Cut")
 
-        # Remove the cutter
         bpy.data.objects.remove(cutter, do_unlink=True)
-
-        # Center the cut grid back to the origin
-        grid_obj.location.x -= drawer_x / 2.0
-        grid_obj.location.y -= drawer_y / 2.0
 
         geometry.center_origin_to_bounds(context, grid_obj)
 
-
-
-        self.report({'INFO'}, f"Fitted Grid created and cut to {drawer_x * 1000} x {drawer_y * 1000} mm.")
+        self.report({'INFO'}, f"Grid fitted to {drawer_x}mm x {drawer_y}mm")
         return {'FINISHED'}
 
 
