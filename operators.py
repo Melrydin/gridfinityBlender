@@ -227,9 +227,14 @@ class GRIDFINITY_OT_create_stacking_lip_array(bpy.types.Operator):
 
         pitch = 0.042
 
-        obj_l = geometry.load_reference_object(context, "baseplate_L.obj")
-        obj_t = geometry.load_reference_object(context, "baseplate_T.obj")
-        obj_x = geometry.load_reference_object(context, "baseplate_X.obj")
+        if context.scene.gridfinity_use_magnets:
+            obj_l = geometry.load_reference_object(context, "baseplate_L_magnet.obj")
+            obj_t = geometry.load_reference_object(context, "baseplate_T_magnet.obj")
+            obj_x = geometry.load_reference_object(context, "baseplate_X_magnet.obj")
+        else:
+            obj_l = geometry.load_reference_object(context, "baseplate_L.obj")
+            obj_t = geometry.load_reference_object(context, "baseplate_T.obj")
+            obj_x = geometry.load_reference_object(context, "baseplate_X.obj")
 
         if not obj_l or not obj_t or not obj_x:
             self.report({'ERROR'}, "OBJ files missing")

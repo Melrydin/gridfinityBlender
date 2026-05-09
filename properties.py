@@ -47,6 +47,11 @@ def register():
         subtype='DIR_PATH',
         default="//"
     )
+    bpy.types.Scene.gridfinity_use_magnets = bpy.props.BoolProperty(
+        name="Include Magnets",
+        description="Add magnetic baseplates to the bottom",
+        default=False
+    )
 
 
 def unregister():
@@ -56,3 +61,4 @@ def unregister():
     del bpy.types.Scene.gridfinity_bin_wall_thickness
     del bpy.types.Scene.gridfinity_drawer_x
     del bpy.types.Scene.gridfinity_drawer_y
+    del bpy.types.Scene.gridfinity_use_magnets

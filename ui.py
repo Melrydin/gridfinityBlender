@@ -18,6 +18,8 @@ class VIEW3D_PT_gridfinity_panel(bpy.types.Panel):
         row.prop(scene, "gridfinity_x", text="Width X")
         row.prop(scene, "gridfinity_y", text="Depth Y")
 
+        box_unit.prop(scene, "gridfinity_use_magnets", text="Add Magnet Holders")
+
         layout.separator()
 
         box_ui = layout.box()
