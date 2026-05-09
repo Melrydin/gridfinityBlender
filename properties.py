@@ -52,6 +52,11 @@ def register():
         description="Add magnetic baseplates to the bottom",
         default=False
     )
+    bpy.types.Scene.gridfinity_use_infill = bpy.props.BoolProperty(
+        name="Solid Infill",
+        description="Use filled baseplates (flat T and filled X)",
+        default=False
+    )
 
 
 def unregister():
@@ -62,3 +67,4 @@ def unregister():
     del bpy.types.Scene.gridfinity_drawer_x
     del bpy.types.Scene.gridfinity_drawer_y
     del bpy.types.Scene.gridfinity_use_magnets
+    del bpy.types.Scene.gridfinity_use_infill
