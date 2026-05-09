@@ -69,6 +69,34 @@ def create_baseplate_unit_mesh(context):
     bm.free()
     mesh.update()
 
+    # Magnet Holes
+    if getattr(context.scene, "gridfinity_use_magnets", False):
+        cutter_mesh = bpy.data.meshes.new("Magnet_Cutter_Mesh")
+        cutter_obj = bpy.data.objects.new("Magnet_Cutter", cutter_mesh)
+        context.collection.objects.link(cutter_obj)
+
+        c_bm = bmesh.new()
+        offsets = [(0.013, 0.013), (0.013, -0.013), (-0.013, 0.013), (-0.013, -0.013)]
+
+        for ox, oy in offsets:
+            # Magnet void: 6.5mm diameter, 2.4mm deep
+            # Extending slightly below Z=0 to prevent Z-fighting (-1mm to 2.4mm)
+            mag = bmesh.ops.create_cone(c_bm, cap_ends=True, cap_tris=False, segments=64, radius1=0.00325, radius2=0.00325, depth=0.0034)
+            bmesh.ops.translate(c_bm, vec=(ox, oy, 0.0007), verts=mag['verts'])
+
+        c_bm.to_mesh(cutter_mesh)
+        c_bm.free()
+
+        # Apply Boolean Difference
+        context.view_layer.objects.active = obj
+        bool_mod = obj.modifiers.new(name="Gridfinity_Holes", type='BOOLEAN')
+        bool_mod.operation = 'DIFFERENCE'
+        bool_mod.object = cutter_obj
+        bool_mod.solver = 'EXACT'
+
+        bpy.ops.object.modifier_apply(modifier="Gridfinity_Holes")
+        bpy.data.objects.remove(cutter_obj, do_unlink=True)
+
     return obj
 
 
