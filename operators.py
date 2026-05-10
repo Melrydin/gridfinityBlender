@@ -71,34 +71,8 @@ class GRIDFINITY_OT_create_baseplate(bpy.types.Operator):
 
         obj = geometry.create_baseplate_unit_mesh(context)
 
-        unit_size = 0.0415
-        spacing = 0.001
-        pitch = unit_size + spacing  # 0.0425
+        geometry.apply_grid_array(context, obj, nx, ny)
 
-        if nx > 1:
-            mod_x = obj.modifiers.new(name="Array_X", type='ARRAY')
-            mod_x.count = nx
-            mod_x.use_relative_offset = False
-            mod_x.use_constant_offset = True
-            mod_x.constant_offset_displace = (pitch, 0.0, 0.0)
-            mod_x.use_merge_vertices = True
-            mod_x.merge_threshold = 0.0001
-            bpy.ops.object.modifier_apply(modifier="Array_X")
-
-        if ny > 1:
-            mod_y = obj.modifiers.new(name="Array_Y", type='ARRAY')
-            mod_y.count = ny
-            mod_y.use_relative_offset = False
-            mod_y.use_constant_offset = True
-            mod_y.constant_offset_displace = (0.0, pitch, 0.0)
-            mod_y.use_merge_vertices = True
-            mod_y.merge_threshold = 0.0001
-            bpy.ops.object.modifier_apply(modifier="Array_Y")
-
-        offset_x = -(nx - 1) * pitch / 2.0
-        offset_y = -(ny - 1) * pitch / 2.0
-        obj.location.x += offset_x
-        obj.location.y += offset_y
         obj.name = f"Gridfinity_Baseplate_{nx}x{ny}"
 
         geometry.center_origin_to_bounds(context, obj)
@@ -119,36 +93,9 @@ class GRIDFINITY_OT_create_baseplate_with_bin(bpy.types.Operator):
         height_mm = context.scene.gridfinity_bin_height
         thickness_mm = context.scene.gridfinity_bin_wall_thickness
 
-        unit_size = 0.0415
-        spacing = 0.001
-        pitch = unit_size + spacing  # 0.0425
-
         obj = geometry.create_baseplate_unit_mesh(context)
 
-        if nx > 1:
-            mod_x = obj.modifiers.new(name="Array_X", type='ARRAY')
-            mod_x.count = nx
-            mod_x.use_relative_offset = False
-            mod_x.use_constant_offset = True
-            mod_x.constant_offset_displace = (pitch, 0.0, 0.0)
-            mod_x.use_merge_vertices = True
-            mod_x.merge_threshold = 0.0001
-            bpy.ops.object.modifier_apply(modifier="Array_X")
-
-        if ny > 1:
-            mod_y = obj.modifiers.new(name="Array_Y", type='ARRAY')
-            mod_y.count = ny
-            mod_y.use_relative_offset = False
-            mod_y.use_constant_offset = True
-            mod_y.constant_offset_displace = (0.0, pitch, 0.0)
-            mod_y.use_merge_vertices = True
-            mod_y.merge_threshold = 0.0001
-            bpy.ops.object.modifier_apply(modifier="Array_Y")
-
-        offset_x = -(nx - 1) * pitch / 2.0
-        offset_y = -(ny - 1) * pitch / 2.0
-        obj.location.x += offset_x
-        obj.location.y += offset_y
+        geometry.apply_grid_array(context, obj, nx, ny)
 
         bin_obj = geometry.create_bin_mesh(context, nx, ny, height_mm, thickness_mm)
         obj.name = f"Gridfinity_Baseplate_{nx}x{ny}"
@@ -173,36 +120,9 @@ class GRIDFINITY_OT_create_baseplate_with_solid_bin(bpy.types.Operator):
         height_mm = context.scene.gridfinity_bin_height
         thickness_mm = context.scene.gridfinity_bin_wall_thickness
 
-        unit_size = 0.0415
-        spacing = 0.001
-        pitch = unit_size + spacing  # 0.0425
-
         obj = geometry.create_baseplate_unit_mesh(context)
 
-        if nx > 1:
-            mod_x = obj.modifiers.new(name="Array_X", type='ARRAY')
-            mod_x.count = nx
-            mod_x.use_relative_offset = False
-            mod_x.use_constant_offset = True
-            mod_x.constant_offset_displace = (pitch, 0.0, 0.0)
-            mod_x.use_merge_vertices = True
-            mod_x.merge_threshold = 0.0001
-            bpy.ops.object.modifier_apply(modifier="Array_X")
-
-        if ny > 1:
-            mod_y = obj.modifiers.new(name="Array_Y", type='ARRAY')
-            mod_y.count = ny
-            mod_y.use_relative_offset = False
-            mod_y.use_constant_offset = True
-            mod_y.constant_offset_displace = (0.0, pitch, 0.0)
-            mod_y.use_merge_vertices = True
-            mod_y.merge_threshold = 0.0001
-            bpy.ops.object.modifier_apply(modifier="Array_Y")
-
-        offset_x = -(nx - 1) * pitch / 2.0
-        offset_y = -(ny - 1) * pitch / 2.0
-        obj.location.x += offset_x
-        obj.location.y += offset_y
+        geometry.apply_grid_array(context, obj, nx, ny)
 
         bin_obj = geometry.create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm)
         obj.name = f"Gridfinity_Baseplate_{nx}x{ny}"

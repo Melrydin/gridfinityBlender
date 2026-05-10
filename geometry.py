@@ -271,6 +271,37 @@ def create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm):
     return obj
 
 
+def apply_grid_array(context, obj, nx, ny):
+    unit_size = 0.0415
+    spacing = 0.001
+    pitch = unit_size + spacing
+
+    if nx > 1:
+        mod_x = obj.modifiers.new(name="Array_X", type='ARRAY')
+        mod_x.count = nx
+        mod_x.use_relative_offset = False
+        mod_x.use_constant_offset = True
+        mod_x.constant_offset_displace = (pitch, 0.0, 0.0)
+        mod_x.use_merge_vertices = True
+        mod_x.merge_threshold = 0.0001
+        bpy.ops.object.modifier_apply(modifier="Array_X")
+
+    if ny > 1:
+        mod_y = obj.modifiers.new(name="Array_Y", type='ARRAY')
+        mod_y.count = ny
+        mod_y.use_relative_offset = False
+        mod_y.use_constant_offset = True
+        mod_y.constant_offset_displace = (0.0, pitch, 0.0)
+        mod_y.use_merge_vertices = True
+        mod_y.merge_threshold = 0.0001
+        bpy.ops.object.modifier_apply(modifier="Array_Y")
+
+    offset_x = (nx - 1) * pitch / 2.0
+    offset_y = (ny - 1) * pitch / 2.0
+    obj.location.x -= offset_x
+    obj.location.y -= offset_y
+
+
 def center_origin_to_bounds(context, obj):
     """
     Sets the origin of the given object to the center of its bounding box.
