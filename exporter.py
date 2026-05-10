@@ -1,9 +1,6 @@
 import bpy
 import os
 
-import bpy
-import os
-
 class GRIDFINITY_OT_batch_export(bpy.types.Operator):
     """Export Gridfinity objects grouped by world location reading direct object names"""
     bl_idname = "gridfinity.batch_export"
@@ -11,7 +8,7 @@ class GRIDFINITY_OT_batch_export(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        export_path = bpy.path.abspath(context.scene.gridfinity_export_path)
+        export_path = bpy.path.abspath(context.scene.gridfinity.export_path)
 
         if not os.path.exists(export_path):
             self.report({'ERROR'}, "Target directory does not exist")
@@ -53,7 +50,7 @@ class GRIDFINITY_OT_batch_export(bpy.types.Operator):
         for obj in orig_selected:
             try:
                 obj.select_set(True)
-            except:
+            except ReferenceError:
                 pass
         view_layer.objects.active = orig_active
 
