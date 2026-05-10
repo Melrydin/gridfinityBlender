@@ -2,6 +2,7 @@ import bpy
 import bmesh
 import os
 import mathutils
+import math
 
 GRIDFINITY_PITCH = 0.042
 GRIDFINITY_CLEARANCE = 0.0005
@@ -231,7 +232,105 @@ def apply_grid_array(obj, nx, ny):
         apply_modifiers_via_depsgraph(context, obj)
 
 
-def center_origin_to_bounds(context, obj):
+def generate_lip_array(context, nx, ny):
+    """
+    Generates the merged lip array purely via data structures and matrix math,
+    bypassing all bpy.ops and selection states.
+    """
+    if context.scene.gridfinity_use_magnets:
+        if context.scene.gridfinity_use_infill:
+            obj_l = load_reference_object(context, "Gridfinity_baseplate_L_magnet")
+            obj_t = load_reference_object(context, "Gridfinity_baseplate_T_magnet_filled")
+            obj_x = load_reference_object(context, "Gridfinity_baseplate_X_magnet_filled")
+        else:
+            obj_l = load_reference_object(context, "Gridfinity_baseplate_L_magnet")
+            obj_t = load_reference_object(context, "Gridfinity_baseplate_T_magnet")
+            obj_x = load_reference_object(context, "Gridfinity_baseplate_X_magnet")
+    else:
+        if context.scene.gridfinity_use_infill:
+            obj_l = load_reference_object(context, "Gridfinity_baseplate_L")
+            obj_t = load_reference_object(context, "Gridfinity_baseplate_T_filled")
+            obj_x = load_reference_object(context, "Gridfinity_baseplate_X_filled")
+        else:
+            obj_l = load_reference_object(context, "Gridfinity_baseplate_L")
+            obj_t = load_reference_object(context, "Gridfinity_baseplate_T")
+            obj_x = load_reference_object(context, "Gridfinity_baseplate_X")
+
+    if not obj_l or not obj_t or not obj_x:
+        return None
+
+    grid = [[True for _ in range(ny)] for _ in range(nx)]
+
+    def cell_exists(cx, cy):
+        if 0 <= cx < nx and 0 <= cy < ny:
+            return grid[cx][cy]
+        return False
+
+    state_lookup = {
+        (True, False, False, False): (obj_l, math.radians(180)),
+        (False, True, False, False): (obj_l, math.radians(-90)),
+        (False, False, True, False): (obj_l, math.radians(0)),
+        (False, False, False, True): (obj_l, math.radians(90)),
+        (True, True, False, False):  (obj_t, math.radians(180)),
+        (False, True, True, False):  (obj_t, math.radians(-90)),
+        (False, False, True, True):  (obj_t, math.radians(0)),
+        (True, False, False, True):  (obj_t, math.radians(90)),
+        (True, True, True, True):    (obj_x, math.radians(0))
+    }
+
+    all_verts = []
+    all_faces = []
+    vert_offset = 0
+
+    for x in range(nx + 1):
+        for y in range(ny + 1):
+            tr = cell_exists(x, y)
+            tl = cell_exists(x - 1, y)
+            bl = cell_exists(x - 1, y - 1)
+            br = cell_exists(x, y - 1)
+
+            state = (tr, tl, bl, br)
+
+            if state not in state_lookup:
+                continue
+
+            source_obj, rotation_z = state_lookup[state]
+            source_mesh = source_obj.data
+
+            matrix = mathutils.Matrix.Translation((x * GRIDFINITY_PITCH, y * GRIDFINITY_PITCH, 0.0)) @ mathutils.Matrix.Rotation(rotation_z, 4, 'Z')
+
+            for v in source_mesh.vertices:
+                all_verts.append(matrix @ v.co)
+
+            for p in source_mesh.polygons:
+                all_faces.append([v + vert_offset for v in p.vertices])
+
+            vert_offset += len(source_mesh.vertices)
+
+    bpy.data.objects.remove(obj_l, do_unlink=True)
+    bpy.data.objects.remove(obj_t, do_unlink=True)
+    bpy.data.objects.remove(obj_x, do_unlink=True)
+
+    if not all_verts:
+        return None
+
+    merged_mesh = bpy.data.meshes.new(f"Gridfinity_Lip_Array_{nx}x{ny}_Mesh")
+    merged_mesh.from_pydata(all_verts, [], all_faces)
+    merged_mesh.update()
+
+    bm = bmesh.new()
+    bm.from_mesh(merged_mesh)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0001)
+    bm.to_mesh(merged_mesh)
+    bm.free()
+
+    final_obj = bpy.data.objects.new(f"Gridfinity_Lip_Array_{nx}x{ny}", merged_mesh)
+    context.collection.objects.link(final_obj)
+
+    return final_obj
+
+
+def center_origin_to_bounds(obj):
     """
     Centers the origin in X and Y bounds, sets local Z origin to the absolute bottom.
     Snaps X and Y world location to 0,0, but PRESERVES the original world Z height.
@@ -258,35 +357,31 @@ def center_origin_to_bounds(context, obj):
     obj.location = (0.0, 0.0, min_z)
 
 
-def load_reference_object(context, filename):
+def load_reference_object(context, object_name):
     """
-    Imports geometry directly and isolates it without viewport context errors.
+    Appends geometry safely from the internal geometry.blend file using bpy.data.libraries.
     """
     addon_dir = os.path.dirname(__file__)
-    filepath = os.path.join(addon_dir, "geometry", filename)
+    filepath = os.path.join(addon_dir, "geometry", "geometry.blend")
 
     if not os.path.exists(filepath):
-        print(f"Error: File missing: {filename}")
+        print(f"Error: Blend file missing at: {filepath}")
         return None
 
-    existing_objects = set(context.scene.objects)
+    with bpy.data.libraries.load(filepath, link=False) as (data_from, data_to):
+        if object_name not in data_from.objects:
+            print(f"Error: Object '{object_name}' not found in geometry.blend")
+            return None
 
-    bpy.ops.wm.obj_import(filepath=filepath)
+        data_to.objects = [object_name]
 
-    imported_objects = set(context.scene.objects) - existing_objects
-
-    if not imported_objects:
+    if not data_to.objects or data_to.objects[0] is None:
+        print(f"Error: Failed to load object '{object_name}'")
         return None
 
-    obj = list(imported_objects)[0]
+    obj = data_to.objects[0]
 
-    mesh = obj.data
-    mat_rot_scale = obj.matrix_world.to_3x3().to_4x4()
-
-    for v in mesh.vertices:
-        v.co = mat_rot_scale @ v.co
-
-    loc = obj.matrix_world.translation
-    obj.matrix_world = mathutils.Matrix.Translation(loc)
+    if obj.name not in context.collection.objects:
+        context.collection.objects.link(obj)
 
     return obj

@@ -66,5 +66,6 @@ def unregister():
     del bpy.types.Scene.gridfinity_bin_wall_thickness
     del bpy.types.Scene.gridfinity_drawer_x
     del bpy.types.Scene.gridfinity_drawer_y
+    del bpy.types.Scene.gridfinity_export_path
     del bpy.types.Scene.gridfinity_use_magnets
     del bpy.types.Scene.gridfinity_use_infill
