@@ -137,10 +137,6 @@ Full support for magnetic baseplate configurations enables compatible components
 | Generated geometry looks corrupted | Reset parameters to defaults and regenerate |
 | Boolean operations fail | Increase wall thickness or check for overlapping geometry |
 
-## Changelog
-
-See [RELEASE_NOTES.md](RELEASE_NOTES.md) for detailed version history and updates.
-
 ## License
 
 This addon is provided under the terms specified in the [LICENSE](LICENSE) file.
