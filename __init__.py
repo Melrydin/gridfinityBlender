@@ -6,6 +6,8 @@ bl_info = {
     "location": "View3D > Sidebar > Gridfinity",
     "description": "Generates customizable Gridfinity storage solutions",
     "category": "Object",
+    "license": "GPL-3.0-or-later",
+
 }
 
 from . import properties
