@@ -175,7 +175,11 @@ class GRIDFINITY_OT_create_stacking_lip_array(GridfinityBaseOperator):
         nx = params['nx']
         ny = params['ny']
 
-        final_obj = geometry.generate_lip_array(nx, ny, params['use_magnets'], params['use_infill'])
+        try:
+            final_obj = geometry.generate_lip_array(nx, ny, params['use_magnets'], params['use_infill'])
+        except Exception as e:
+            self.report({'ERROR'}, str(e))
+            return {'CANCELLED'}
 
         if not final_obj:
             self.report({'ERROR'}, "Failed to generate lip array geometry")
@@ -204,7 +208,11 @@ class GRIDFINITY_OT_create_drawer_fitted_grid(GridfinityBaseOperator):
         nx = int((drawer_x / pitch_mm) + 1)
         ny = int((drawer_y / pitch_mm) + 1)
 
-        grid_obj = geometry.generate_lip_array(nx, ny, params['use_magnets'], params['use_infill'])
+        try:
+            grid_obj = geometry.generate_lip_array(nx, ny, params['use_magnets'], params['use_infill'])
+        except Exception as e:
+            self.report({'ERROR'}, str(e))
+            return {'CANCELLED'}
 
         if not grid_obj:
             self.report({'ERROR'}, "Array generation failed")

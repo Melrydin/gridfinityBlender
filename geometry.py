@@ -243,9 +243,6 @@ def generate_lip_array(nx, ny, use_magnets, use_infill):
             obj_t = load_reference_object("Gridfinity_baseplate_T")
             obj_x = load_reference_object("Gridfinity_baseplate_X")
 
-    if not obj_l or not obj_t or not obj_x:
-        return None
-
     grid = [[True for _ in range(ny)] for _ in range(nx)]
 
     def cell_exists(cx, cy):
@@ -357,25 +354,21 @@ def center_origin_to_bounds(obj):
 def load_reference_object(object_name):
     """
     Appends geometry safely from the internal geometry.blend file using bpy.data.libraries.
+    Raises exceptions instead of returning None on failure.
     """
     addon_dir = os.path.dirname(__file__)
     filepath = os.path.join(addon_dir, "geometry", "geometry.blend")
 
     if not os.path.exists(filepath):
-        print(f"Error: Blend file missing at: {filepath}")
-        return None
+        raise FileNotFoundError(f"Blend file missing at: {filepath}")
 
     with bpy.data.libraries.load(filepath, link=False) as (data_from, data_to):
         if object_name not in data_from.objects:
-            print(f"Error: Object '{object_name}' not found in geometry.blend")
-            return None
+            raise ValueError(f"Object '{object_name}' not found in geometry.blend")
 
         data_to.objects = [object_name]
 
     if not data_to.objects or data_to.objects[0] is None:
-        print(f"Error: Failed to load object '{object_name}'")
-        return None
+        raise RuntimeError(f"Failed to load object '{object_name}'")
 
-    obj = data_to.objects[0]
-
-    return obj
+    return data_to.objects[0]
