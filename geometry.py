@@ -1,6 +1,7 @@
 import bpy
 import bmesh
 import os
+import mathutils
 
 UNIT_SIZE = 0.0415
 SPACING = 0.001
@@ -8,22 +9,29 @@ PITCH = UNIT_SIZE + SPACING
 BASE_HEIGHT = 0.00475
 
 
+def apply_modifiers_via_depsgraph(context, obj):
+    """
+    Applies all modifiers of an object directly via data structures.
+    """
+    dg = context.evaluated_depsgraph_get()
+    eval_obj = obj.evaluated_get(dg)
+    new_mesh = bpy.data.meshes.new_from_object(eval_obj)
+
+    old_mesh = obj.data
+    obj.data = new_mesh
+    obj.modifiers.clear()
+
+    bpy.data.meshes.remove(old_mesh)
+
+
 def create_baseplate_unit_mesh(context):
     """
     Create a single Gridfinity baseplate unit restricted to 4.75mm height.
-    Origin is at (0, 0, 0) - center of geometry in X/Y, bottom at Z=0.
-
-    Args:
-        context: Blender context
-
-    Returns:
-        bpy.types.Object: The created baseplate unit object
+    Origin is at (0, 0, 0) center of geometry in X/Y, bottom at Z=0.
     """
     mesh = bpy.data.meshes.new("Gridfinity_Baseplate_Mesh")
     obj = bpy.data.objects.new("Gridfinity_Baseplate", mesh)
     context.collection.objects.link(obj)
-    context.view_layer.objects.active = obj
-    obj.select_set(True)
 
     bm = bmesh.new()
     bmesh.ops.create_cube(bm, size=1.0)
@@ -65,7 +73,6 @@ def create_baseplate_unit_mesh(context):
     min_z = min(v.co.z for v in bm.verts)
     bmesh.ops.translate(bm, vec=(0.0, 0.0, -min_z), verts=bm.verts)
 
-    # Center X and Y
     center_x = sum(v.co.x for v in bm.verts) / len(bm.verts)
     center_y = sum(v.co.y for v in bm.verts) / len(bm.verts)
     bmesh.ops.translate(bm, vec=(-center_x, -center_y, 0.0), verts=bm.verts)
@@ -74,7 +81,6 @@ def create_baseplate_unit_mesh(context):
     bm.free()
     mesh.update()
 
-    # Magnet Holes
     if getattr(context.scene, "gridfinity_use_magnets", False):
         cutter_mesh = bpy.data.meshes.new("Magnet_Cutter_Mesh")
         cutter_obj = bpy.data.objects.new("Magnet_Cutter", cutter_mesh)
@@ -84,41 +90,28 @@ def create_baseplate_unit_mesh(context):
         offsets = [(0.013, 0.013), (0.013, -0.013), (-0.013, 0.013), (-0.013, -0.013)]
 
         for ox, oy in offsets:
-            # Magnet void: 6.5mm diameter, 2.4mm deep
-            # Extending slightly below Z=0 to prevent Z-fighting (-1mm to 2.4mm)
             mag = bmesh.ops.create_cone(c_bm, cap_ends=True, cap_tris=False, segments=64, radius1=0.00325, radius2=0.00325, depth=0.0034)
             bmesh.ops.translate(c_bm, vec=(ox, oy, 0.0007), verts=mag['verts'])
 
         c_bm.to_mesh(cutter_mesh)
         c_bm.free()
 
-        # Apply Boolean Difference
-        context.view_layer.objects.active = obj
         bool_mod = obj.modifiers.new(name="Gridfinity_Holes", type='BOOLEAN')
         bool_mod.operation = 'DIFFERENCE'
         bool_mod.object = cutter_obj
         bool_mod.solver = 'EXACT'
 
-        bpy.ops.object.modifier_apply(modifier="Gridfinity_Holes")
+        apply_modifiers_via_depsgraph(context, obj)
+
         bpy.data.objects.remove(cutter_obj, do_unlink=True)
+        bpy.data.meshes.remove(cutter_mesh)
 
     return obj
 
 
 def create_bin_mesh(context, nx, ny, height_mm, thickness_mm):
     """
-    Create a hollow Gridfinity bin on top of the baseplate with inner bottom bevel.
-    Origin is at (0, 0, 0) center of geometry in X/Y, bottom at Z=0.
-
-    Args:
-        context: Blender context
-        nx: Number of units in X direction
-        ny: Number of units in Y direction
-        height_mm: Bin height in millimeters
-        thickness_mm: Bin wall thickness in millimeters
-
-    Returns:
-        bpy.types.Object: The created bin object
+    Create a hollow Gridfinity bin.
     """
     obj, mesh, bm, height = _create_base_bin_geometry(context, "Gridfinity_Bin", nx, ny, height_mm)
     thickness = thickness_mm * 0.001
@@ -135,18 +128,7 @@ def create_bin_mesh(context, nx, ny, height_mm, thickness_mm):
 
 def create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm):
     """
-    Create a solid Gridfinity bin with a 2mm top rim and inner bottom bevel.
-    Origin is at (0, 0, 0) center of geometry in X/Y, bottom at Z=0.
-
-    Args:
-        context: Blender context
-        nx: Number of units in X direction
-        ny: Number of units in Y direction
-        height_mm: Bin height in millimeters
-        thickness_mm: Bin wall thickness in millimeters
-
-    Returns:
-        bpy.types.Object: The created solid bin object
+    Create a solid Gridfinity bin.
     """
     obj, mesh, bm, height = _create_base_bin_geometry(context, "Gridfinity_Solid_Bin", nx, ny, height_mm)
     thickness = thickness_mm * 0.001
@@ -160,11 +142,8 @@ def create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm):
 
     return obj
 
+
 def _create_base_bin_geometry(context, name, nx, ny, height_mm):
-    """
-    Creates the base solid geometry and returns the object, mesh, and bmesh
-    for further specific top modifications.
-    """
     width = UNIT_SIZE + (nx - 1) * PITCH
     depth = UNIT_SIZE + (ny - 1) * PITCH
     height = height_mm * 0.001
@@ -172,8 +151,6 @@ def _create_base_bin_geometry(context, name, nx, ny, height_mm):
     mesh = bpy.data.meshes.new(f"{name}_Mesh")
     obj = bpy.data.objects.new(name, mesh)
     context.collection.objects.link(obj)
-    context.view_layer.objects.active = obj
-    obj.select_set(True)
 
     bm = bmesh.new()
     bmesh.ops.create_cube(bm, size=1.0)
@@ -201,9 +178,6 @@ def _create_base_bin_geometry(context, name, nx, ny, height_mm):
 
 
 def _apply_top_inset_and_bevel(bm, thickness, extrude_depth):
-    """
-    Applies the top inset, downward extrusion, and inner bottom bevel to the given bmesh.
-    """
     top_face = max(bm.faces, key=lambda f: f.calc_center_median().z)
     bmesh.ops.inset_region(bm, faces=[top_face], thickness=thickness)
 
@@ -231,6 +205,10 @@ def _apply_top_inset_and_bevel(bm, thickness, extrude_depth):
 
 
 def apply_grid_array(obj, nx, ny):
+    """
+    Applies array modifications dynamically without operator calls.
+    """
+    context = bpy.context
 
     if nx > 1:
         mod_x = obj.modifiers.new(name="Array_X", type='ARRAY')
@@ -240,7 +218,6 @@ def apply_grid_array(obj, nx, ny):
         mod_x.constant_offset_displace = (PITCH, 0.0, 0.0)
         mod_x.use_merge_vertices = True
         mod_x.merge_threshold = 0.0001
-        bpy.ops.object.modifier_apply(modifier="Array_X")
 
     if ny > 1:
         mod_y = obj.modifiers.new(name="Array_Y", type='ARRAY')
@@ -250,29 +227,42 @@ def apply_grid_array(obj, nx, ny):
         mod_y.constant_offset_displace = (0.0, PITCH, 0.0)
         mod_y.use_merge_vertices = True
         mod_y.merge_threshold = 0.0001
-        bpy.ops.object.modifier_apply(modifier="Array_Y")
 
-    offset_x = (nx - 1) * PITCH / 2.0
-    offset_y = (ny - 1) * PITCH / 2.0
-    obj.location.x -= offset_x
-    obj.location.y -= offset_y
+    if nx > 1 or ny > 1:
+        apply_modifiers_via_depsgraph(context, obj)
 
 
 def center_origin_to_bounds(context, obj):
     """
-    Sets the origin of the given object to the center of its bounding box.
-
-    Args:
-        context: Blender context
-        obj: The object to center
+    Centers the origin in X and Y bounds, sets local Z origin to the absolute bottom.
+    Snaps X and Y world location to 0,0, but PRESERVES the original world Z height.
+    This ensures bins sit correctly on top of baseplates instead of sinking into them.
     """
-    bpy.ops.object.select_all(action='DESELECT')
-    obj.select_set(True)
-    context.view_layer.objects.active = obj
-    bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+    mesh = obj.data
+    if not mesh.vertices:
+        return
+
+    min_x = min(v.co.x for v in mesh.vertices)
+    max_x = max(v.co.x for v in mesh.vertices)
+    min_y = min(v.co.y for v in mesh.vertices)
+    max_y = max(v.co.y for v in mesh.vertices)
+    min_z = min(v.co.z for v in mesh.vertices)
+
+    center_x = (min_x + max_x) / 2.0
+    center_y = (min_y + max_y) / 2.0
+    center = mathutils.Vector((center_x, center_y, min_z))
+
+    for v in mesh.vertices:
+        v.co -= center
+
+    mesh.update()
+    obj.location = (0.0, 0.0, min_z)
 
 
 def load_reference_object(context, filename):
+    """
+    Imports geometry directly and isolates it without viewport context errors.
+    """
     addon_dir = os.path.dirname(__file__)
     filepath = os.path.join(addon_dir, "geometry", filename)
 
@@ -280,15 +270,24 @@ def load_reference_object(context, filename):
         print(f"Error: File missing: {filename}")
         return None
 
-    bpy.ops.object.select_all(action='DESELECT')
+    existing_objects = set(context.scene.objects)
+
     bpy.ops.wm.obj_import(filepath=filepath)
 
-    if not context.selected_objects:
+    imported_objects = set(context.scene.objects) - existing_objects
+
+    if not imported_objects:
         return None
 
-    obj = context.selected_objects[0]
-    context.view_layer.objects.active = obj
+    obj = list(imported_objects)[0]
 
-    bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+    mesh = obj.data
+    mat_rot_scale = obj.matrix_world.to_3x3().to_4x4()
+
+    for v in mesh.vertices:
+        v.co = mat_rot_scale @ v.co
+
+    loc = obj.matrix_world.translation
+    obj.matrix_world = mathutils.Matrix.Translation(loc)
 
     return obj

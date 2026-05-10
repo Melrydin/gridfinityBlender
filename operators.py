@@ -2,6 +2,8 @@ import bpy
 from . import geometry
 import math
 import bmesh
+import mathutils
+
 
 class GridfinityBaseOperator(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
@@ -136,7 +138,7 @@ class GRIDFINITY_OT_create_baseplate_with_solid_bin(GridfinityBaseOperator):
 
 
 class GRIDFINITY_OT_create_stacking_lip_array(GridfinityBaseOperator):
-    """Generate grid array using Marching Squares neighbor logic with debug grid"""
+    """Generate grid array using Marching Squares neighbor logic"""
     bl_idname = "gridfinity.create_stacking_lip_array"
     bl_label = "Create Stacking Lip Array"
 
@@ -145,95 +147,11 @@ class GRIDFINITY_OT_create_stacking_lip_array(GridfinityBaseOperator):
         nx = params['nx']
         ny = params['ny']
 
-        pitch = 0.042
+        final_obj = _generate_lip_array(context, nx, ny)
 
-        if context.scene.gridfinity_use_magnets:
-            if context.scene.gridfinity_use_infill:
-                obj_l = geometry.load_reference_object(context, "baseplate_L_magnet.obj")
-                obj_t = geometry.load_reference_object(context, "baseplate_T_magnet_filled.obj")
-                obj_x = geometry.load_reference_object(context, "baseplate_X_magnet_filled.obj")
-            else:
-                obj_l = geometry.load_reference_object(context, "baseplate_L_magnet.obj")
-                obj_t = geometry.load_reference_object(context, "baseplate_T_magnet.obj")
-                obj_x = geometry.load_reference_object(context, "baseplate_X_magnet.obj")
-        else:
-            if context.scene.gridfinity_use_infill:
-                obj_l = geometry.load_reference_object(context, "baseplate_L.obj")
-                obj_t = geometry.load_reference_object(context, "baseplate_T_filled.obj")
-                obj_x = geometry.load_reference_object(context, "baseplate_X_filled.obj")
-            else:
-                obj_l = geometry.load_reference_object(context, "baseplate_L.obj")
-                obj_t = geometry.load_reference_object(context, "baseplate_T.obj")
-                obj_x = geometry.load_reference_object(context, "baseplate_X.obj")
-
-        if not obj_l or not obj_t or not obj_x:
-            self.report({'ERROR'}, "OBJ files missing")
+        if not final_obj:
+            self.report({'ERROR'}, "Failed to generate lip array geometry")
             return {'CANCELLED'}
-
-        grid = [[True for _ in range(ny)] for _ in range(nx)]
-
-        def cell_exists(cx, cy):
-            if 0 <= cx < nx and 0 <= cy < ny:
-                return grid[cx][cy]
-            return False
-
-        state_lookup = {
-            (True, False, False, False): (obj_l, math.radians(180)),
-            (False, True, False, False): (obj_l, math.radians(-90)),
-            (False, False, True, False): (obj_l, math.radians(0)),
-            (False, False, False, True): (obj_l, math.radians(90)),
-            (True, True, False, False):  (obj_t, math.radians(180)),
-            (False, True, True, False):  (obj_t, math.radians(-90)),
-            (False, False, True, True):  (obj_t, math.radians(0)),
-            (True, False, False, True):  (obj_t, math.radians(90)),
-            (True, True, True, True):    (obj_x, math.radians(0))
-        }
-
-        array_parts = []
-
-        for x in range(nx + 1):
-            for y in range(ny + 1):
-                tr = cell_exists(x, y)
-                tl = cell_exists(x - 1, y)
-                bl = cell_exists(x - 1, y - 1)
-                br = cell_exists(x, y - 1)
-
-                state = (tr, tl, bl, br)
-
-                if state not in state_lookup:
-                    continue
-
-                source_obj, rotation_z = state_lookup[state]
-
-                new_obj = source_obj.copy()
-                new_obj.data = source_obj.data.copy()
-                context.collection.objects.link(new_obj)
-
-                new_obj.location = (x * pitch, y * pitch, 0.0)
-                new_obj.rotation_euler = (0.0, 0.0, rotation_z)
-
-                array_parts.append(new_obj)
-
-        bpy.data.objects.remove(obj_l, do_unlink=True)
-        bpy.data.objects.remove(obj_t, do_unlink=True)
-        bpy.data.objects.remove(obj_x, do_unlink=True)
-
-        if not array_parts:
-            return {'CANCELLED'}
-
-        bpy.ops.object.select_all(action='DESELECT')
-        for part in array_parts:
-            part.select_set(True)
-
-        context.view_layer.objects.active = array_parts[0]
-        bpy.ops.object.join()
-
-        final_obj = context.active_object
-
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.select_all(action='SELECT')
-        bpy.ops.mesh.remove_doubles(threshold=0.0001)
-        bpy.ops.object.mode_set(mode='OBJECT')
 
         self.report({'INFO'}, f"Merged array {nx}x{ny} generated successfully")
 
@@ -242,7 +160,7 @@ class GRIDFINITY_OT_create_stacking_lip_array(GridfinityBaseOperator):
 
 
 class GRIDFINITY_OT_create_drawer_fitted_grid(GridfinityBaseOperator):
-    """Creates a grid and cuts it to the exact drawer dimensions"""
+    """Creates a grid and cuts it to the exact drawer dimensions directly via depsgraph"""
     bl_idname = "gridfinity.create_drawer_fitted_grid"
     bl_label = "Create Fitted Drawer Grid"
 
@@ -254,16 +172,11 @@ class GRIDFINITY_OT_create_drawer_fitted_grid(GridfinityBaseOperator):
         nx = int((drawer_x / pitch_mm) + 1)
         ny = int((drawer_y / pitch_mm) + 1)
 
-        old_x = context.scene.gridfinity_x
-        old_y = context.scene.gridfinity_y
-        context.scene.gridfinity_x = nx
-        context.scene.gridfinity_y = ny
+        grid_obj = _generate_lip_array(context, nx, ny)
 
-        bpy.ops.gridfinity.create_stacking_lip_array()
-        grid_obj = context.active_object
-
-        context.scene.gridfinity_x = old_x
-        context.scene.gridfinity_y = old_y
+        if not grid_obj:
+            self.report({'ERROR'}, "Array generation failed")
+            return {'CANCELLED'}
 
         mesh = bpy.data.meshes.new("Drawer_Cutter_Mesh")
         cutter = bpy.data.objects.new("Drawer_Cutter_Temp", mesh)
@@ -285,20 +198,121 @@ class GRIDFINITY_OT_create_drawer_fitted_grid(GridfinityBaseOperator):
         bm.to_mesh(mesh)
         bm.free()
 
-        context.view_layer.objects.active = grid_obj
         bool_mod = grid_obj.modifiers.new(name="Drawer_Cut", type='BOOLEAN')
         bool_mod.operation = 'INTERSECT'
         bool_mod.object = cutter
         bool_mod.solver = 'FAST'
 
-        bpy.ops.object.modifier_apply(modifier="Drawer_Cut")
+        context.view_layer.update()
+        geometry.apply_modifiers_via_depsgraph(context, grid_obj)
 
         bpy.data.objects.remove(cutter, do_unlink=True)
+        bpy.data.meshes.remove(mesh)
 
         self.report({'INFO'}, f"Grid fitted to {int(drawer_x)}mm x {int(drawer_y)}mm")
 
         final_name = f"Gridfinity_Drawer_Grid_{int(drawer_x)}x{int(drawer_y)}"
         return self.finalize_object(context, grid_obj, final_name)
+
+
+def _generate_lip_array(context, nx, ny):
+    """
+    Generates the merged lip array purely via data structures and matrix math,
+    bypassing all bpy.ops and selection states.
+    """
+    pitch = 0.042
+
+    if context.scene.gridfinity_use_magnets:
+        if context.scene.gridfinity_use_infill:
+            obj_l = geometry.load_reference_object(context, "baseplate_L_magnet.obj")
+            obj_t = geometry.load_reference_object(context, "baseplate_T_magnet_filled.obj")
+            obj_x = geometry.load_reference_object(context, "baseplate_X_magnet_filled.obj")
+        else:
+            obj_l = geometry.load_reference_object(context, "baseplate_L_magnet.obj")
+            obj_t = geometry.load_reference_object(context, "baseplate_T_magnet.obj")
+            obj_x = geometry.load_reference_object(context, "baseplate_X_magnet.obj")
+    else:
+        if context.scene.gridfinity_use_infill:
+            obj_l = geometry.load_reference_object(context, "baseplate_L.obj")
+            obj_t = geometry.load_reference_object(context, "baseplate_T_filled.obj")
+            obj_x = geometry.load_reference_object(context, "baseplate_X_filled.obj")
+        else:
+            obj_l = geometry.load_reference_object(context, "baseplate_L.obj")
+            obj_t = geometry.load_reference_object(context, "baseplate_T.obj")
+            obj_x = geometry.load_reference_object(context, "baseplate_X.obj")
+
+    if not obj_l or not obj_t or not obj_x:
+        return None
+
+    grid = [[True for _ in range(ny)] for _ in range(nx)]
+
+    def cell_exists(cx, cy):
+        if 0 <= cx < nx and 0 <= cy < ny:
+            return grid[cx][cy]
+        return False
+
+    state_lookup = {
+        (True, False, False, False): (obj_l, math.radians(180)),
+        (False, True, False, False): (obj_l, math.radians(-90)),
+        (False, False, True, False): (obj_l, math.radians(0)),
+        (False, False, False, True): (obj_l, math.radians(90)),
+        (True, True, False, False):  (obj_t, math.radians(180)),
+        (False, True, True, False):  (obj_t, math.radians(-90)),
+        (False, False, True, True):  (obj_t, math.radians(0)),
+        (True, False, False, True):  (obj_t, math.radians(90)),
+        (True, True, True, True):    (obj_x, math.radians(0))
+    }
+
+    all_verts = []
+    all_faces = []
+    vert_offset = 0
+
+    for x in range(nx + 1):
+        for y in range(ny + 1):
+            tr = cell_exists(x, y)
+            tl = cell_exists(x - 1, y)
+            bl = cell_exists(x - 1, y - 1)
+            br = cell_exists(x, y - 1)
+
+            state = (tr, tl, bl, br)
+
+            if state not in state_lookup:
+                continue
+
+            source_obj, rotation_z = state_lookup[state]
+            source_mesh = source_obj.data
+
+            matrix = mathutils.Matrix.Translation((x * pitch, y * pitch, 0.0)) @ mathutils.Matrix.Rotation(rotation_z, 4, 'Z')
+
+            for v in source_mesh.vertices:
+                all_verts.append(matrix @ v.co)
+
+            for p in source_mesh.polygons:
+                all_faces.append([v + vert_offset for v in p.vertices])
+
+            vert_offset += len(source_mesh.vertices)
+
+    bpy.data.objects.remove(obj_l, do_unlink=True)
+    bpy.data.objects.remove(obj_t, do_unlink=True)
+    bpy.data.objects.remove(obj_x, do_unlink=True)
+
+    if not all_verts:
+        return None
+
+    merged_mesh = bpy.data.meshes.new(f"Gridfinity_Lip_Array_{nx}x{ny}_Mesh")
+    merged_mesh.from_pydata(all_verts, [], all_faces)
+    merged_mesh.update()
+
+    bm = bmesh.new()
+    bm.from_mesh(merged_mesh)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0001)
+    bm.to_mesh(merged_mesh)
+    bm.free()
+
+    final_obj = bpy.data.objects.new(f"Gridfinity_Lip_Array_{nx}x{ny}", merged_mesh)
+    context.collection.objects.link(final_obj)
+
+    return final_obj
 
 
 def register():
