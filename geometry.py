@@ -108,7 +108,7 @@ def create_baseplate_unit_mesh(context):
 def create_bin_mesh(context, nx, ny, height_mm, thickness_mm):
     """
     Create a hollow Gridfinity bin on top of the baseplate with inner bottom bevel.
-    Origin is at (0, 0, 0) - center of geometry in X/Y, bottom at Z=0.
+    Origin is at (0, 0, 0) center of geometry in X/Y, bottom at Z=0.
 
     Args:
         context: Blender context
@@ -120,34 +120,11 @@ def create_bin_mesh(context, nx, ny, height_mm, thickness_mm):
     Returns:
         bpy.types.Object: The created bin object
     """
-
     obj, mesh, bm, height = _create_base_bin_geometry(context, "Gridfinity_Bin", nx, ny, height_mm)
     thickness = thickness_mm * 0.001
+    extrude_depth = height - thickness
 
-    top_face = max(bm.faces, key=lambda f: f.calc_center_median().z)
-    bmesh.ops.inset_region(bm, faces=[top_face], thickness=thickness)
-
-    geom_to_extrude = [top_face] + list(top_face.edges)
-    extrude_result = bmesh.ops.extrude_face_region(bm, geom=geom_to_extrude)
-    extruded_verts = [elem for elem in extrude_result['geom'] if isinstance(elem, bmesh.types.BMVert)]
-
-    bmesh.ops.translate(bm, vec=(0.0, 0.0, -(height - thickness)), verts=extruded_verts)
-
-    bm.verts.ensure_lookup_table()
-    bm.edges.ensure_lookup_table()
-
-    inner_bottom_edges = [e for e in bm.edges if e.verts[0] in extruded_verts and e.verts[1] in extruded_verts]
-
-    bmesh.ops.bevel(
-        bm,
-        geom=inner_bottom_edges,
-        offset=0.001,
-        segments=8,
-        profile=0.5,
-        affect='EDGES'
-    )
-
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    _apply_top_inset_and_bevel(bm, thickness, extrude_depth)
 
     bm.to_mesh(mesh)
     bm.free()
@@ -159,7 +136,7 @@ def create_bin_mesh(context, nx, ny, height_mm, thickness_mm):
 def create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm):
     """
     Create a solid Gridfinity bin with a 2mm top rim and inner bottom bevel.
-    Origin is at (0, 0, 0) - center of geometry in X/Y, bottom at Z=0.
+    Origin is at (0, 0, 0) center of geometry in X/Y, bottom at Z=0.
 
     Args:
         context: Blender context
@@ -171,35 +148,11 @@ def create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm):
     Returns:
         bpy.types.Object: The created solid bin object
     """
-
     obj, mesh, bm, height = _create_base_bin_geometry(context, "Gridfinity_Solid_Bin", nx, ny, height_mm)
     thickness = thickness_mm * 0.001
     rim_depth = 0.002
 
-    top_face = max(bm.faces, key=lambda f: f.calc_center_median().z)
-    bmesh.ops.inset_region(bm, faces=[top_face], thickness=thickness)
-
-    geom_to_extrude = [top_face] + list(top_face.edges)
-    extrude_result = bmesh.ops.extrude_face_region(bm, geom=geom_to_extrude)
-    extruded_verts = [elem for elem in extrude_result['geom'] if isinstance(elem, bmesh.types.BMVert)]
-
-    bmesh.ops.translate(bm, vec=(0.0, 0.0, -rim_depth), verts=extruded_verts)
-
-    bm.verts.ensure_lookup_table()
-    bm.edges.ensure_lookup_table()
-
-    inner_bottom_edges = [e for e in bm.edges if e.verts[0] in extruded_verts and e.verts[1] in extruded_verts]
-
-    bmesh.ops.bevel(
-        bm,
-        geom=inner_bottom_edges,
-        offset=0.001,
-        segments=8,
-        profile=0.5,
-        affect='EDGES'
-    )
-
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    _apply_top_inset_and_bevel(bm, thickness, rim_depth)
 
     bm.to_mesh(mesh)
     bm.free()
@@ -245,6 +198,36 @@ def _create_base_bin_geometry(context, name, nx, ny, height_mm):
     bm.faces.ensure_lookup_table()
 
     return obj, mesh, bm, height
+
+
+def _apply_top_inset_and_bevel(bm, thickness, extrude_depth):
+    """
+    Applies the top inset, downward extrusion, and inner bottom bevel to the given bmesh.
+    """
+    top_face = max(bm.faces, key=lambda f: f.calc_center_median().z)
+    bmesh.ops.inset_region(bm, faces=[top_face], thickness=thickness)
+
+    geom_to_extrude = [top_face] + list(top_face.edges)
+    extrude_result = bmesh.ops.extrude_face_region(bm, geom=geom_to_extrude)
+    extruded_verts = [elem for elem in extrude_result['geom'] if isinstance(elem, bmesh.types.BMVert)]
+
+    bmesh.ops.translate(bm, vec=(0.0, 0.0, -extrude_depth), verts=extruded_verts)
+
+    bm.verts.ensure_lookup_table()
+    bm.edges.ensure_lookup_table()
+
+    inner_bottom_edges = [e for e in bm.edges if e.verts[0] in extruded_verts and e.verts[1] in extruded_verts]
+
+    bmesh.ops.bevel(
+        bm,
+        geom=inner_bottom_edges,
+        offset=0.001,
+        segments=8,
+        profile=0.5,
+        affect='EDGES'
+    )
+
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
 
 
 def apply_grid_array(obj, nx, ny):
