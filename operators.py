@@ -178,6 +178,18 @@ class GRIDFINITY_OT_create_stacking_lip_array(bpy.types.Operator):
                 return grid[cx][cy]
             return False
 
+        state_lookup = {
+            (True, False, False, False): (obj_l, math.radians(180)),
+            (False, True, False, False): (obj_l, math.radians(-90)),
+            (False, False, True, False): (obj_l, math.radians(0)),
+            (False, False, False, True): (obj_l, math.radians(90)),
+            (True, True, False, False):  (obj_t, math.radians(180)),
+            (False, True, True, False):  (obj_t, math.radians(-90)),
+            (False, False, True, True):  (obj_t, math.radians(0)),
+            (True, False, False, True):  (obj_t, math.radians(90)),
+            (True, True, True, True):    (obj_x, math.radians(0))
+        }
+
         array_parts = []
 
         for x in range(nx + 1):
@@ -189,48 +201,19 @@ class GRIDFINITY_OT_create_stacking_lip_array(bpy.types.Operator):
 
                 state = (tr, tl, bl, br)
 
-                source_obj = None
-                rotation_z = 0.0
-
-                if state == (True, False, False, False):
-                    source_obj = obj_l
-                    rotation_z = math.radians(180)
-                elif state == (False, True, False, False):
-                    source_obj = obj_l
-                    rotation_z = math.radians(-90)
-                elif state == (False, False, True, False):
-                    source_obj = obj_l
-                    rotation_z = math.radians(0)
-                elif state == (False, False, False, True):
-                    source_obj = obj_l
-                    rotation_z = math.radians(90)
-                elif state == (True, True, False, False):
-                    source_obj = obj_t
-                    rotation_z = math.radians(180)
-                elif state == (False, True, True, False):
-                    source_obj = obj_t
-                    rotation_z = math.radians(-90)
-                elif state == (False, False, True, True):
-                    source_obj = obj_t
-                    rotation_z = math.radians(0)
-                elif state == (True, False, False, True):
-                    source_obj = obj_t
-                    rotation_z = math.radians(90)
-                elif state == (True, True, True, True):
-                    source_obj = obj_x
-                    rotation_z = math.radians(0)
-                elif state == (False, False, False, False):
+                if state not in state_lookup:
                     continue
 
-                if source_obj:
-                    new_obj = source_obj.copy()
-                    new_obj.data = source_obj.data.copy()
-                    context.collection.objects.link(new_obj)
+                source_obj, rotation_z = state_lookup[state]
 
-                    new_obj.location = (x * pitch, y * pitch, 0.0)
-                    new_obj.rotation_euler = (0.0, 0.0, rotation_z)
+                new_obj = source_obj.copy()
+                new_obj.data = source_obj.data.copy()
+                context.collection.objects.link(new_obj)
 
-                    array_parts.append(new_obj)
+                new_obj.location = (x * pitch, y * pitch, 0.0)
+                new_obj.rotation_euler = (0.0, 0.0, rotation_z)
+
+                array_parts.append(new_obj)
 
         bpy.data.objects.remove(obj_l, do_unlink=True)
         bpy.data.objects.remove(obj_t, do_unlink=True)
