@@ -71,7 +71,7 @@ class GRIDFINITY_OT_create_baseplate(bpy.types.Operator):
 
         obj = geometry.create_baseplate_unit_mesh(context)
 
-        geometry.apply_grid_array(context, obj, nx, ny)
+        geometry.apply_grid_array(obj, nx, ny)
 
         obj.name = f"Gridfinity_Baseplate_{nx}x{ny}"
 
@@ -95,7 +95,7 @@ class GRIDFINITY_OT_create_baseplate_with_bin(bpy.types.Operator):
 
         obj = geometry.create_baseplate_unit_mesh(context)
 
-        geometry.apply_grid_array(context, obj, nx, ny)
+        geometry.apply_grid_array(obj, nx, ny)
 
         bin_obj = geometry.create_bin_mesh(context, nx, ny, height_mm, thickness_mm)
         obj.name = f"Gridfinity_Baseplate_{nx}x{ny}"
@@ -122,7 +122,7 @@ class GRIDFINITY_OT_create_baseplate_with_solid_bin(bpy.types.Operator):
 
         obj = geometry.create_baseplate_unit_mesh(context)
 
-        geometry.apply_grid_array(context, obj, nx, ny)
+        geometry.apply_grid_array(obj, nx, ny)
 
         bin_obj = geometry.create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm)
         obj.name = f"Gridfinity_Baseplate_{nx}x{ny}"

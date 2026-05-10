@@ -2,6 +2,11 @@ import bpy
 import bmesh
 import os
 
+UNIT_SIZE = 0.0415
+SPACING = 0.001
+PITCH = UNIT_SIZE + SPACING
+BASE_HEIGHT = 0.00475
+
 
 def create_baseplate_unit_mesh(context):
     """
@@ -25,7 +30,7 @@ def create_baseplate_unit_mesh(context):
 
     vertical_edges = [e for e in bm.edges if abs(e.verts[0].co.z - e.verts[1].co.z) > 0.5]
 
-    bmesh.ops.scale(bm, vec=(0.0415, 0.0415, 0.00001), verts=bm.verts)
+    bmesh.ops.scale(bm, vec=(UNIT_SIZE, UNIT_SIZE, 0.00001), verts=bm.verts)
     bmesh.ops.translate(bm, vec=(0.0, 0.0, 0.0), verts=bm.verts)
 
     bmesh.ops.bevel(
@@ -115,15 +120,12 @@ def create_bin_mesh(context, nx, ny, height_mm, thickness_mm):
     Returns:
         bpy.types.Object: The created bin object
     """
-    unit_size = 0.0415
-    spacing = 0.001
-    pitch = unit_size + spacing
 
-    width = unit_size + (nx - 1) * pitch
-    depth = unit_size + (ny - 1) * pitch
+    width = UNIT_SIZE + (nx - 1) * PITCH
+    depth = UNIT_SIZE + (ny - 1) * PITCH
     height = height_mm * 0.001
     thickness = thickness_mm * 0.001
-    base_height = 0.00475
+    base_height = BASE_HEIGHT
 
     mesh = bpy.data.meshes.new("Gridfinity_Bin_Mesh")
     obj = bpy.data.objects.new("Gridfinity_Bin", mesh)
@@ -200,15 +202,12 @@ def create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm):
     Returns:
         bpy.types.Object: The created solid bin object
     """
-    unit_size = 0.0415
-    spacing = 0.001
-    pitch = unit_size + spacing
 
-    width = unit_size + (nx - 1) * pitch
-    depth = unit_size + (ny - 1) * pitch
+    width = UNIT_SIZE + (nx - 1) * PITCH
+    depth = UNIT_SIZE + (ny - 1) * PITCH
     height = height_mm * 0.001
     thickness = thickness_mm * 0.001
-    base_height = 0.00475
+    base_height = BASE_HEIGHT
     rim_depth = 0.002
 
     mesh = bpy.data.meshes.new("Gridfinity_Solid_Bin_Mesh")
@@ -271,17 +270,14 @@ def create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm):
     return obj
 
 
-def apply_grid_array(context, obj, nx, ny):
-    unit_size = 0.0415
-    spacing = 0.001
-    pitch = unit_size + spacing
+def apply_grid_array(obj, nx, ny):
 
     if nx > 1:
         mod_x = obj.modifiers.new(name="Array_X", type='ARRAY')
         mod_x.count = nx
         mod_x.use_relative_offset = False
         mod_x.use_constant_offset = True
-        mod_x.constant_offset_displace = (pitch, 0.0, 0.0)
+        mod_x.constant_offset_displace = (PITCH, 0.0, 0.0)
         mod_x.use_merge_vertices = True
         mod_x.merge_threshold = 0.0001
         bpy.ops.object.modifier_apply(modifier="Array_X")
@@ -291,13 +287,13 @@ def apply_grid_array(context, obj, nx, ny):
         mod_y.count = ny
         mod_y.use_relative_offset = False
         mod_y.use_constant_offset = True
-        mod_y.constant_offset_displace = (0.0, pitch, 0.0)
+        mod_y.constant_offset_displace = (0.0, PITCH, 0.0)
         mod_y.use_merge_vertices = True
         mod_y.merge_threshold = 0.0001
         bpy.ops.object.modifier_apply(modifier="Array_Y")
 
-    offset_x = (nx - 1) * pitch / 2.0
-    offset_y = (ny - 1) * pitch / 2.0
+    offset_x = (nx - 1) * PITCH / 2.0
+    offset_y = (ny - 1) * PITCH / 2.0
     obj.location.x -= offset_x
     obj.location.y -= offset_y
 
