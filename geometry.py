@@ -121,39 +121,8 @@ def create_bin_mesh(context, nx, ny, height_mm, thickness_mm):
         bpy.types.Object: The created bin object
     """
 
-    width = UNIT_SIZE + (nx - 1) * PITCH
-    depth = UNIT_SIZE + (ny - 1) * PITCH
-    height = height_mm * 0.001
+    obj, mesh, bm, height = _create_base_bin_geometry(context, "Gridfinity_Bin", nx, ny, height_mm)
     thickness = thickness_mm * 0.001
-    base_height = BASE_HEIGHT
-
-    mesh = bpy.data.meshes.new("Gridfinity_Bin_Mesh")
-    obj = bpy.data.objects.new("Gridfinity_Bin", mesh)
-    context.collection.objects.link(obj)
-    context.view_layer.objects.active = obj
-    obj.select_set(True)
-
-    bm = bmesh.new()
-    bmesh.ops.create_cube(bm, size=1.0)
-
-    bmesh.ops.scale(bm, vec=(width, depth, height), verts=bm.verts)
-
-    center_z = base_height + (height / 2.0)
-    bmesh.ops.translate(bm, vec=(0.0, 0.0, center_z), verts=bm.verts)
-
-    vertical_edges = [e for e in bm.edges if abs(e.verts[0].co.z - e.verts[1].co.z) > 0.001]
-
-    bmesh.ops.bevel(
-        bm,
-        geom=vertical_edges,
-        offset=0.0075,
-        segments=16,
-        profile=0.5,
-        affect='EDGES'
-    )
-
-    bm.verts.ensure_lookup_table()
-    bm.faces.ensure_lookup_table()
 
     top_face = max(bm.faces, key=lambda f: f.calc_center_median().z)
     bmesh.ops.inset_region(bm, faces=[top_face], thickness=thickness)
@@ -203,40 +172,9 @@ def create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm):
         bpy.types.Object: The created solid bin object
     """
 
-    width = UNIT_SIZE + (nx - 1) * PITCH
-    depth = UNIT_SIZE + (ny - 1) * PITCH
-    height = height_mm * 0.001
+    obj, mesh, bm, height = _create_base_bin_geometry(context, "Gridfinity_Solid_Bin", nx, ny, height_mm)
     thickness = thickness_mm * 0.001
-    base_height = BASE_HEIGHT
     rim_depth = 0.002
-
-    mesh = bpy.data.meshes.new("Gridfinity_Solid_Bin_Mesh")
-    obj = bpy.data.objects.new("Gridfinity_Solid_Bin", mesh)
-    context.collection.objects.link(obj)
-    context.view_layer.objects.active = obj
-    obj.select_set(True)
-
-    bm = bmesh.new()
-    bmesh.ops.create_cube(bm, size=1.0)
-
-    bmesh.ops.scale(bm, vec=(width, depth, height), verts=bm.verts)
-
-    center_z = base_height + (height / 2.0)
-    bmesh.ops.translate(bm, vec=(0.0, 0.0, center_z), verts=bm.verts)
-
-    vertical_edges = [e for e in bm.edges if abs(e.verts[0].co.z - e.verts[1].co.z) > 0.001]
-
-    bmesh.ops.bevel(
-        bm,
-        geom=vertical_edges,
-        offset=0.0075,
-        segments=16,
-        profile=0.5,
-        affect='EDGES'
-    )
-
-    bm.verts.ensure_lookup_table()
-    bm.faces.ensure_lookup_table()
 
     top_face = max(bm.faces, key=lambda f: f.calc_center_median().z)
     bmesh.ops.inset_region(bm, faces=[top_face], thickness=thickness)
@@ -268,6 +206,45 @@ def create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm):
     mesh.update()
 
     return obj
+
+def _create_base_bin_geometry(context, name, nx, ny, height_mm):
+    """
+    Creates the base solid geometry and returns the object, mesh, and bmesh
+    for further specific top modifications.
+    """
+    width = UNIT_SIZE + (nx - 1) * PITCH
+    depth = UNIT_SIZE + (ny - 1) * PITCH
+    height = height_mm * 0.001
+
+    mesh = bpy.data.meshes.new(f"{name}_Mesh")
+    obj = bpy.data.objects.new(name, mesh)
+    context.collection.objects.link(obj)
+    context.view_layer.objects.active = obj
+    obj.select_set(True)
+
+    bm = bmesh.new()
+    bmesh.ops.create_cube(bm, size=1.0)
+
+    bmesh.ops.scale(bm, vec=(width, depth, height), verts=bm.verts)
+
+    center_z = BASE_HEIGHT + (height / 2.0)
+    bmesh.ops.translate(bm, vec=(0.0, 0.0, center_z), verts=bm.verts)
+
+    vertical_edges = [e for e in bm.edges if abs(e.verts[0].co.z - e.verts[1].co.z) > 0.001]
+
+    bmesh.ops.bevel(
+        bm,
+        geom=vertical_edges,
+        offset=0.0075,
+        segments=16,
+        profile=0.5,
+        affect='EDGES'
+    )
+
+    bm.verts.ensure_lookup_table()
+    bm.faces.ensure_lookup_table()
+
+    return obj, mesh, bm, height
 
 
 def apply_grid_array(obj, nx, ny):
