@@ -23,12 +23,6 @@ This addon streamlines the creation of professional-grade Gridfinity storage com
 
 The Gridfinity organizational system was invented by Zack Freedman. Discover more about the system and find additional designs on his [Thangs profile](https://thangs.com/designer/ZackFreedman).
 
-## Requirements
-
-- **Blender 3.6+** (Blender 4.1+ recommended for optimal STL export performance)
-- **Python 3.10+** (included with Blender)
-- **~50 MB** disk space for addon and dependencies
-
 ## Features
 
 ### 🎯 Configuration & Customization
@@ -151,4 +145,4 @@ This addon is provided under the terms specified in the [LICENSE](LICENSE) file.
 
 **Created by:** Clemens
 **Last Updated:** May 2026
-**Blender Compatibility:** 3.6 - Latest
+**Blender Compatibility:** 4.5.9 LTS - Latest
