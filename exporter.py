@@ -8,7 +8,8 @@ class GRIDFINITY_OT_batch_export(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        export_path = bpy.path.abspath(context.scene.gridfinity.export_path)
+        props = context.scene.gridfinity
+        export_path = bpy.path.abspath(props.export_path)
 
         if not os.path.exists(export_path):
             self.report({'ERROR'}, "Target directory does not exist")
@@ -21,38 +22,40 @@ class GRIDFINITY_OT_batch_export(bpy.types.Operator):
         orig_active = view_layer.objects.active
         orig_selected = context.selected_objects[:]
 
-        for key, objs in groups.items():
+        try:
+            for key, objs in groups.items():
+                bpy.ops.object.select_all(action='DESELECT')
+
+                export_name = "Gridfinity_Export"
+                for obj in objs:
+                    obj.select_set(True)
+                    clean = obj.name.split('.')[0]
+
+                    if "Complete" in clean:
+                        export_name = clean
+                    elif "Box" in clean and "Complete" not in export_name:
+                        export_name = clean
+                    elif export_name == "Gridfinity_Export":
+                        export_name = clean
+
+                view_layer.objects.active = objs[0]
+                full_filepath = os.path.join(export_path, f"{export_name}.stl")
+
+                if hasattr(bpy.ops.wm, "stl_export"):
+                    bpy.ops.wm.stl_export(filepath=full_filepath, export_selected_objects=True)
+                else:
+                    bpy.ops.export_mesh.stl(filepath=full_filepath, use_selection=True)
+
+                exported_count += 1
+
+        finally:
             bpy.ops.object.select_all(action='DESELECT')
-
-            export_name = "Gridfinity_Export"
-            for obj in objs:
-                obj.select_set(True)
-                clean = obj.name.split('.')[0]
-
-                if "Complete" in clean:
-                    export_name = clean
-                elif "Box" in clean and "Complete" not in export_name:
-                    export_name = clean
-                elif export_name == "Gridfinity_Export":
-                    export_name = clean
-
-            view_layer.objects.active = objs[0]
-            full_filepath = os.path.join(export_path, f"{export_name}.stl")
-
-            if hasattr(bpy.ops.wm, "stl_export"):
-                bpy.ops.wm.stl_export(filepath=full_filepath, export_selected_objects=True)
-            else:
-                bpy.ops.export_mesh.stl(filepath=full_filepath, use_selection=True)
-
-            exported_count += 1
-
-        bpy.ops.object.select_all(action='DESELECT')
-        for obj in orig_selected:
-            try:
-                obj.select_set(True)
-            except ReferenceError:
-                pass
-        view_layer.objects.active = orig_active
+            for obj in orig_selected:
+                try:
+                    obj.select_set(True)
+                except ReferenceError:
+                    pass
+            view_layer.objects.active = orig_active
 
         self.report({'INFO'}, f"Successfully exported {exported_count} STL files")
         return {'FINISHED'}
