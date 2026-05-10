@@ -3,10 +3,9 @@ import bmesh
 import os
 import mathutils
 
-UNIT_SIZE = 0.0415
-SPACING = 0.001
-PITCH = UNIT_SIZE + SPACING
-BASE_HEIGHT = 0.00475
+GRIDFINITY_PITCH = 0.042
+GRIDFINITY_CLEARANCE = 0.0005
+GRIDFINITY_BASE_HEIGHT = 0.00475
 
 
 def apply_modifiers_via_depsgraph(context, obj):
@@ -38,7 +37,7 @@ def create_baseplate_unit_mesh(context):
 
     vertical_edges = [e for e in bm.edges if abs(e.verts[0].co.z - e.verts[1].co.z) > 0.5]
 
-    bmesh.ops.scale(bm, vec=(UNIT_SIZE, UNIT_SIZE, 0.00001), verts=bm.verts)
+    bmesh.ops.scale(bm, vec=(GRIDFINITY_PITCH, GRIDFINITY_PITCH, 0.00001), verts=bm.verts)
     bmesh.ops.translate(bm, vec=(0.0, 0.0, 0.0), verts=bm.verts)
 
     bmesh.ops.bevel(
@@ -144,8 +143,8 @@ def create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm):
 
 
 def _create_base_bin_geometry(context, name, nx, ny, height_mm):
-    width = UNIT_SIZE + (nx - 1) * PITCH
-    depth = UNIT_SIZE + (ny - 1) * PITCH
+    width = (nx * GRIDFINITY_PITCH) - GRIDFINITY_CLEARANCE
+    depth = (ny * GRIDFINITY_PITCH) - GRIDFINITY_CLEARANCE
     height = height_mm * 0.001
 
     mesh = bpy.data.meshes.new(f"{name}_Mesh")
@@ -157,7 +156,7 @@ def _create_base_bin_geometry(context, name, nx, ny, height_mm):
 
     bmesh.ops.scale(bm, vec=(width, depth, height), verts=bm.verts)
 
-    center_z = BASE_HEIGHT + (height / 2.0)
+    center_z = GRIDFINITY_BASE_HEIGHT + (height / 2.0)
     bmesh.ops.translate(bm, vec=(0.0, 0.0, center_z), verts=bm.verts)
 
     vertical_edges = [e for e in bm.edges if abs(e.verts[0].co.z - e.verts[1].co.z) > 0.001]
@@ -215,7 +214,7 @@ def apply_grid_array(obj, nx, ny):
         mod_x.count = nx
         mod_x.use_relative_offset = False
         mod_x.use_constant_offset = True
-        mod_x.constant_offset_displace = (PITCH, 0.0, 0.0)
+        mod_x.constant_offset_displace = (GRIDFINITY_PITCH, 0.0, 0.0)
         mod_x.use_merge_vertices = True
         mod_x.merge_threshold = 0.0001
 
@@ -224,7 +223,7 @@ def apply_grid_array(obj, nx, ny):
         mod_y.count = ny
         mod_y.use_relative_offset = False
         mod_y.use_constant_offset = True
-        mod_y.constant_offset_displace = (0.0, PITCH, 0.0)
+        mod_y.constant_offset_displace = (0.0, GRIDFINITY_PITCH, 0.0)
         mod_y.use_merge_vertices = True
         mod_y.merge_threshold = 0.0001
 

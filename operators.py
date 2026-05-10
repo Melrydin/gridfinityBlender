@@ -167,7 +167,8 @@ class GRIDFINITY_OT_create_drawer_fitted_grid(GridfinityBaseOperator):
     def execute(self, context):
         drawer_x = context.scene.gridfinity_drawer_x
         drawer_y = context.scene.gridfinity_drawer_y
-        pitch_mm = 42.0
+
+        pitch_mm = geometry.GRIDFINITY_PITCH * 1000.0
 
         nx = int((drawer_x / pitch_mm) + 1)
         ny = int((drawer_y / pitch_mm) + 1)
@@ -220,8 +221,6 @@ def _generate_lip_array(context, nx, ny):
     Generates the merged lip array purely via data structures and matrix math,
     bypassing all bpy.ops and selection states.
     """
-    pitch = 0.042
-
     if context.scene.gridfinity_use_magnets:
         if context.scene.gridfinity_use_infill:
             obj_l = geometry.load_reference_object(context, "baseplate_L_magnet.obj")
@@ -282,7 +281,7 @@ def _generate_lip_array(context, nx, ny):
             source_obj, rotation_z = state_lookup[state]
             source_mesh = source_obj.data
 
-            matrix = mathutils.Matrix.Translation((x * pitch, y * pitch, 0.0)) @ mathutils.Matrix.Rotation(rotation_z, 4, 'Z')
+            matrix = mathutils.Matrix.Translation((x * geometry.GRIDFINITY_PITCH, y * geometry.GRIDFINITY_PITCH, 0.0)) @ mathutils.Matrix.Rotation(rotation_z, 4, 'Z')
 
             for v in source_mesh.vertices:
                 all_verts.append(matrix @ v.co)
