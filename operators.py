@@ -1,149 +1,149 @@
 import bpy
 from . import geometry
 import math
+import bmesh
+
+class GridfinityBaseOperator(bpy.types.Operator):
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def get_base_params(self, context):
+        return {
+            'nx': context.scene.gridfinity_x,
+            'ny': context.scene.gridfinity_y,
+            'height_mm': context.scene.gridfinity_bin_height,
+            'thickness_mm': context.scene.gridfinity_bin_wall_thickness
+        }
+
+    def finalize_object(self, context, obj, name):
+        obj.name = name
+        geometry.center_origin_to_bounds(context, obj)
+        return {'FINISHED'}
 
 
-class GRIDFINITY_OT_create_bin(bpy.types.Operator):
+class GRIDFINITY_OT_create_bin(GridfinityBaseOperator):
     """Create a hollow Gridfinity bin on top of the baseplate with inner bottom bevel"""
     bl_idname = "gridfinity.create_bin"
     bl_label = "Create Gridfinity Bin"
-    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        nx = context.scene.gridfinity_x
-        ny = context.scene.gridfinity_y
-        height_mm = context.scene.gridfinity_bin_height
-        thickness_mm = context.scene.gridfinity_bin_wall_thickness
+        params = self.get_base_params(context)
 
-        obj = geometry.create_bin_mesh(context, nx, ny, height_mm, thickness_mm)
-        obj.name = f"Gridfinity_Box_{nx}x{ny}_H{int(height_mm)}"
-
-        geometry.center_origin_to_bounds(context, obj)
+        obj = geometry.create_bin_mesh(
+            context,
+            params['nx'],
+            params['ny'],
+            params['height_mm'],
+            params['thickness_mm']
+        )
 
         self.report({'INFO'}, "Gridfinity bin with inner bottom bevel created.")
-        return {'FINISHED'}
+
+        final_name = f"Gridfinity_Box_{params['nx']}x{params['ny']}_H{int(params['height_mm'])}"
+        return self.finalize_object(context, obj, final_name)
 
 
-class GRIDFINITY_OT_create_solid_bin(bpy.types.Operator):
+class GRIDFINITY_OT_create_solid_bin(GridfinityBaseOperator):
     """Create a solid Gridfinity bin with a 2mm top rim and inner bottom bevel"""
     bl_idname = "gridfinity.create_solid_bin"
     bl_label = "Create Solid Bin"
-    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        nx = context.scene.gridfinity_x
-        ny = context.scene.gridfinity_y
-        height_mm = context.scene.gridfinity_bin_height
-        thickness_mm = context.scene.gridfinity_bin_wall_thickness
+        params = self.get_base_params(context)
 
-        obj = geometry.create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm)
-
-        geometry.center_origin_to_bounds(context, obj)
+        obj = geometry.create_solid_bin_mesh(
+            context,
+            params['nx'],
+            params['ny'],
+            params['height_mm'],
+            params['thickness_mm']
+        )
 
         self.report({'INFO'}, "Solid Gridfinity bin with 2mm rim and inner bevel created.")
-        return {'FINISHED'}
+
+        final_name = f"Gridfinity_Complete_SolidBox_{params['nx']}x{params['ny']}_H{int(params['height_mm'])}"
+        return self.finalize_object(context, obj, final_name)
 
 
-class GRIDFINITY_OT_create_stacking_lip(bpy.types.Operator):
-    """Full Gridfinity stacking lip profile generation with closed manifold bottom"""
-    bl_idname = "gridfinity.create_stacking_lip"
-    bl_label = "Create Stacking Lip"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        obj = geometry.create_stacking_lip_mesh(context)
-
-        geometry.center_origin_to_bounds(context, obj)
-
-        self.report({'INFO'}, "Gridfinity stacking lip perfectly hollowed and bridged.")
-        return {'FINISHED'}
-
-
-class GRIDFINITY_OT_create_baseplate(bpy.types.Operator):
+class GRIDFINITY_OT_create_baseplate(GridfinityBaseOperator):
     """Create a Gridfinity baseplate unit restricted to 4.75mm height"""
     bl_idname = "gridfinity.create_baseplate"
     bl_label = "Create Gridfinity Baseplate"
-    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        nx = context.scene.gridfinity_x
-        ny = context.scene.gridfinity_y
+        params = self.get_base_params(context)
 
         obj = geometry.create_baseplate_unit_mesh(context)
-
-        geometry.apply_grid_array(obj, nx, ny)
-
-        obj.name = f"Gridfinity_Baseplate_{nx}x{ny}"
-
-        geometry.center_origin_to_bounds(context, obj)
+        geometry.apply_grid_array(obj, params['nx'], params['ny'])
 
         self.report({'INFO'}, "Gridfinity baseplate created with exactly 4.75mm height.")
-        return {'FINISHED'}
+
+        final_name = f"Gridfinity_Baseplate_{params['nx']}x{params['ny']}"
+        return self.finalize_object(context, obj, final_name)
 
 
-class GRIDFINITY_OT_create_baseplate_with_bin(bpy.types.Operator):
+class GRIDFINITY_OT_create_baseplate_with_bin(GridfinityBaseOperator):
     """Create a Gridfinity baseplate with a hollow bin on top"""
     bl_idname = "gridfinity.create_baseplate_with_bin"
     bl_label = "Baseplate + Hollow Bin"
-    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        nx = context.scene.gridfinity_x
-        ny = context.scene.gridfinity_y
-        height_mm = context.scene.gridfinity_bin_height
-        thickness_mm = context.scene.gridfinity_bin_wall_thickness
+        params = self.get_base_params(context)
 
-        obj = geometry.create_baseplate_unit_mesh(context)
+        baseplate_obj = geometry.create_baseplate_unit_mesh(context)
+        geometry.apply_grid_array(baseplate_obj, params['nx'], params['ny'])
+        baseplate_obj.name = f"Gridfinity_Baseplate_{params['nx']}x{params['ny']}"
+        geometry.center_origin_to_bounds(context, baseplate_obj)
 
-        geometry.apply_grid_array(obj, nx, ny)
-
-        bin_obj = geometry.create_bin_mesh(context, nx, ny, height_mm, thickness_mm)
-        obj.name = f"Gridfinity_Baseplate_{nx}x{ny}"
-        bin_obj.name = f"Gridfinity_Complete_Box_{nx}x{ny}_H{int(height_mm)}"
-
-        geometry.center_origin_to_bounds(context, obj)
-        geometry.center_origin_to_bounds(context, bin_obj)
+        bin_obj = geometry.create_bin_mesh(
+            context,
+            params['nx'],
+            params['ny'],
+            params['height_mm'],
+            params['thickness_mm']
+        )
 
         self.report({'INFO'}, "Gridfinity baseplate with hollow bin created.")
-        return {'FINISHED'}
+
+        final_name = f"Gridfinity_Complete_Box_{params['nx']}x{params['ny']}_H{int(params['height_mm'])}"
+        return self.finalize_object(context, bin_obj, final_name)
 
 
-class GRIDFINITY_OT_create_baseplate_with_solid_bin(bpy.types.Operator):
+class GRIDFINITY_OT_create_baseplate_with_solid_bin(GridfinityBaseOperator):
     """Create a Gridfinity baseplate with a solid bin on top"""
     bl_idname = "gridfinity.create_baseplate_with_solid_bin"
     bl_label = "Baseplate + Solid Bin"
-    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        nx = context.scene.gridfinity_x
-        ny = context.scene.gridfinity_y
-        height_mm = context.scene.gridfinity_bin_height
-        thickness_mm = context.scene.gridfinity_bin_wall_thickness
+        params = self.get_base_params(context)
 
-        obj = geometry.create_baseplate_unit_mesh(context)
+        baseplate_obj = geometry.create_baseplate_unit_mesh(context)
+        geometry.apply_grid_array(baseplate_obj, params['nx'], params['ny'])
+        baseplate_obj.name = f"Gridfinity_Baseplate_{params['nx']}x{params['ny']}"
+        geometry.center_origin_to_bounds(context, baseplate_obj)
 
-        geometry.apply_grid_array(obj, nx, ny)
-
-        bin_obj = geometry.create_solid_bin_mesh(context, nx, ny, height_mm, thickness_mm)
-        obj.name = f"Gridfinity_Baseplate_{nx}x{ny}"
-        bin_obj.name = f"Gridfinity_Complete_SolidBox_{nx}x{ny}_H{int(height_mm)}"
-
-        geometry.center_origin_to_bounds(context, obj)
-        geometry.center_origin_to_bounds(context, bin_obj)
+        bin_obj = geometry.create_solid_bin_mesh(
+            context,
+            params['nx'],
+            params['ny'],
+            params['height_mm'],
+            params['thickness_mm']
+        )
 
         self.report({'INFO'}, "Gridfinity baseplate with solid bin created.")
-        return {'FINISHED'}
+
+        final_name = f"Gridfinity_Complete_SolidBox_{params['nx']}x{params['ny']}_H{int(params['height_mm'])}"
+        return self.finalize_object(context, bin_obj, final_name)
 
 
-class GRIDFINITY_OT_create_stacking_lip_array(bpy.types.Operator):
+class GRIDFINITY_OT_create_stacking_lip_array(GridfinityBaseOperator):
     """Generate grid array using Marching Squares neighbor logic with debug grid"""
     bl_idname = "gridfinity.create_stacking_lip_array"
     bl_label = "Create Stacking Lip Array"
-    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        nx = context.scene.gridfinity_x
-        ny = context.scene.gridfinity_y
+        params = self.get_base_params(context)
+        nx = params['nx']
+        ny = params['ny']
 
         pitch = 0.042
 
@@ -153,10 +153,9 @@ class GRIDFINITY_OT_create_stacking_lip_array(bpy.types.Operator):
                 obj_t = geometry.load_reference_object(context, "baseplate_T_magnet_filled.obj")
                 obj_x = geometry.load_reference_object(context, "baseplate_X_magnet_filled.obj")
             else:
-
+                obj_l = geometry.load_reference_object(context, "baseplate_L_magnet.obj")
                 obj_t = geometry.load_reference_object(context, "baseplate_T_magnet.obj")
                 obj_x = geometry.load_reference_object(context, "baseplate_X_magnet.obj")
-                obj_l = geometry.load_reference_object(context, "baseplate_L_magnet.obj")
         else:
             if context.scene.gridfinity_use_infill:
                 obj_l = geometry.load_reference_object(context, "baseplate_L.obj")
@@ -230,32 +229,30 @@ class GRIDFINITY_OT_create_stacking_lip_array(bpy.types.Operator):
         bpy.ops.object.join()
 
         final_obj = context.active_object
-        final_obj.name = f"Gridfinity_Lip_Array_{nx}x{ny}"
 
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.mesh.select_all(action='SELECT')
         bpy.ops.mesh.remove_doubles(threshold=0.0001)
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        geometry.center_origin_to_bounds(context, final_obj)
-
         self.report({'INFO'}, f"Merged array {nx}x{ny} generated successfully")
-        return {'FINISHED'}
+
+        final_name = f"Gridfinity_Lip_Array_{nx}x{ny}"
+        return self.finalize_object(context, final_obj, final_name)
 
 
-class GRIDFINITY_OT_create_drawer_fitted_grid(bpy.types.Operator):
+class GRIDFINITY_OT_create_drawer_fitted_grid(GridfinityBaseOperator):
     """Creates a grid and cuts it to the exact drawer dimensions"""
     bl_idname = "gridfinity.create_drawer_fitted_grid"
     bl_label = "Create Fitted Drawer Grid"
-    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         drawer_x = context.scene.gridfinity_drawer_x
         drawer_y = context.scene.gridfinity_drawer_y
-        pitch = 42.0
+        pitch_mm = 42.0
 
-        nx = int((drawer_x / pitch) + 1)
-        ny = int((drawer_y / pitch) + 1)
+        nx = int((drawer_x / pitch_mm) + 1)
+        ny = int((drawer_y / pitch_mm) + 1)
 
         old_x = context.scene.gridfinity_x
         old_y = context.scene.gridfinity_y
@@ -263,49 +260,51 @@ class GRIDFINITY_OT_create_drawer_fitted_grid(bpy.types.Operator):
         context.scene.gridfinity_y = ny
 
         bpy.ops.gridfinity.create_stacking_lip_array()
-
         grid_obj = context.active_object
 
         context.scene.gridfinity_x = old_x
         context.scene.gridfinity_y = old_y
 
-        bpy.ops.mesh.primitive_cube_add(size=1.0)
-        cutter = context.active_object
-        cutter.name = "Drawer_Cutter_Temp"
+        mesh = bpy.data.meshes.new("Drawer_Cutter_Mesh")
+        cutter = bpy.data.objects.new("Drawer_Cutter_Temp", mesh)
+        context.collection.objects.link(cutter)
+
+        bm = bmesh.new()
+        bmesh.ops.create_cube(bm, size=1.0)
 
         size_x = (drawer_x * 0.001) + 1.0
         size_y = (drawer_y * 0.001) + 1.0
         size_z = 1.0
 
-        cutter.scale = (size_x, size_y, size_z)
+        bmesh.ops.scale(bm, vec=(size_x, size_y, size_z), verts=bm.verts)
 
-        cutter.location.x = ((drawer_x * 0.001)  - 1.0) / 2.0
-        cutter.location.y = ((drawer_y * 0.001) - 1.0) / 2.0
-        cutter.location.z = 0.0
+        loc_x = ((drawer_x * 0.001) - 1.0) / 2.0
+        loc_y = ((drawer_y * 0.001) - 1.0) / 2.0
+        bmesh.ops.translate(bm, vec=(loc_x, loc_y, 0.0), verts=bm.verts)
 
-        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+        bm.to_mesh(mesh)
+        bm.free()
 
         context.view_layer.objects.active = grid_obj
         bool_mod = grid_obj.modifiers.new(name="Drawer_Cut", type='BOOLEAN')
         bool_mod.operation = 'INTERSECT'
         bool_mod.object = cutter
-        bool_mod.solver = 'EXACT'
+        bool_mod.solver = 'FAST'
 
         bpy.ops.object.modifier_apply(modifier="Drawer_Cut")
 
         bpy.data.objects.remove(cutter, do_unlink=True)
 
-        geometry.center_origin_to_bounds(context, grid_obj)
+        self.report({'INFO'}, f"Grid fitted to {int(drawer_x)}mm x {int(drawer_y)}mm")
 
-        self.report({'INFO'}, f"Grid fitted to {drawer_x}mm x {drawer_y}mm")
-        return {'FINISHED'}
+        final_name = f"Gridfinity_Drawer_Grid_{int(drawer_x)}x{int(drawer_y)}"
+        return self.finalize_object(context, grid_obj, final_name)
 
 
 def register():
     bpy.utils.register_class(GRIDFINITY_OT_create_baseplate)
     bpy.utils.register_class(GRIDFINITY_OT_create_bin)
     bpy.utils.register_class(GRIDFINITY_OT_create_solid_bin)
-    bpy.utils.register_class(GRIDFINITY_OT_create_stacking_lip)
     bpy.utils.register_class(GRIDFINITY_OT_create_baseplate_with_bin)
     bpy.utils.register_class(GRIDFINITY_OT_create_baseplate_with_solid_bin)
     bpy.utils.register_class(GRIDFINITY_OT_create_stacking_lip_array)
@@ -316,7 +315,6 @@ def unregister():
     bpy.utils.unregister_class(GRIDFINITY_OT_create_baseplate)
     bpy.utils.unregister_class(GRIDFINITY_OT_create_bin)
     bpy.utils.unregister_class(GRIDFINITY_OT_create_solid_bin)
-    bpy.utils.unregister_class(GRIDFINITY_OT_create_stacking_lip)
     bpy.utils.unregister_class(GRIDFINITY_OT_create_baseplate_with_bin)
     bpy.utils.unregister_class(GRIDFINITY_OT_create_baseplate_with_solid_bin)
     bpy.utils.unregister_class(GRIDFINITY_OT_create_stacking_lip_array)
