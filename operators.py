@@ -1,6 +1,70 @@
 import bpy
 import bmesh
+import mathutils
 from . import geometry
+
+
+def create_object_from_bmesh(name, bm, collection):
+    mesh = bpy.data.meshes.new(f"{name}_Mesh")
+    bm.to_mesh(mesh)
+    bm.free()
+
+    obj = bpy.data.objects.new(name, mesh)
+    collection.objects.link(obj)
+    return obj
+
+
+def apply_modifiers_via_depsgraph(obj, depsgraph):
+    eval_obj = obj.evaluated_get(depsgraph)
+    new_mesh = bpy.data.meshes.new_from_object(eval_obj)
+
+    old_mesh = obj.data
+    obj.data = new_mesh
+    obj.modifiers.clear()
+
+    bpy.data.meshes.remove(old_mesh)
+
+
+def setup_array_modifiers(obj, nx, ny):
+    if nx > 1:
+        mod_x = obj.modifiers.new(name="Array_X", type='ARRAY')
+        mod_x.count = nx
+        mod_x.use_relative_offset = False
+        mod_x.use_constant_offset = True
+        mod_x.constant_offset_displace = (geometry.GRIDFINITY_PITCH, 0.0, 0.0)
+        mod_x.use_merge_vertices = True
+        mod_x.merge_threshold = 0.0001
+
+    if ny > 1:
+        mod_y = obj.modifiers.new(name="Array_Y", type='ARRAY')
+        mod_y.count = ny
+        mod_y.use_relative_offset = False
+        mod_y.use_constant_offset = True
+        mod_y.constant_offset_displace = (0.0, geometry.GRIDFINITY_PITCH, 0.0)
+        mod_y.use_merge_vertices = True
+        mod_y.merge_threshold = 0.0001
+
+
+def center_origin_to_bounds(obj):
+    mesh = obj.data
+    if not mesh.vertices:
+        return
+
+    min_x = min(v.co.x for v in mesh.vertices)
+    max_x = max(v.co.x for v in mesh.vertices)
+    min_y = min(v.co.y for v in mesh.vertices)
+    max_y = max(v.co.y for v in mesh.vertices)
+    min_z = min(v.co.z for v in mesh.vertices)
+
+    center_x = (min_x + max_x) / 2.0
+    center_y = (min_y + max_y) / 2.0
+    center = mathutils.Vector((center_x, center_y, min_z))
+
+    for v in mesh.vertices:
+        v.co -= center
+
+    mesh.update()
+    obj.location = (0.0, 0.0, min_z)
 
 
 class GridfinityBaseOperator(bpy.types.Operator):
@@ -22,19 +86,19 @@ class GridfinityBaseOperator(bpy.types.Operator):
         if obj.name not in context.collection.objects:
             context.collection.objects.link(obj)
         obj.name = name
-        geometry.center_origin_to_bounds(obj)
+        center_origin_to_bounds(obj)
         return {'FINISHED'}
 
     def generate_processed_baseplate(self, context, params):
         collection = context.collection
         depsgraph = params['depsgraph']
 
-        obj = geometry.create_baseplate_unit_mesh()
-        collection.objects.link(obj)
+        bm_base = geometry.create_baseplate_unit_mesh()
+        obj = create_object_from_bmesh("Gridfinity_Baseplate", bm_base, collection)
 
         if params['use_magnets']:
-            cutter_obj = geometry.create_magnet_cutter()
-            collection.objects.link(cutter_obj)
+            bm_cutter = geometry.create_magnet_cutter()
+            cutter_obj = create_object_from_bmesh("Magnet_Cutter", bm_cutter, collection)
 
             bool_mod = obj.modifiers.new(name="Gridfinity_Holes", type='BOOLEAN')
             bool_mod.operation = 'DIFFERENCE'
@@ -44,17 +108,17 @@ class GridfinityBaseOperator(bpy.types.Operator):
             context.view_layer.update()
             depsgraph = context.evaluated_depsgraph_get()
 
-            geometry.apply_modifiers_via_depsgraph(obj, depsgraph)
+            apply_modifiers_via_depsgraph(obj, depsgraph)
 
             bpy.data.objects.remove(cutter_obj, do_unlink=True)
 
-        geometry.setup_array_modifiers(obj, params['nx'], params['ny'])
+        setup_array_modifiers(obj, params['nx'], params['ny'])
 
         if params['nx'] > 1 or params['ny'] > 1:
             context.view_layer.update()
             depsgraph = context.evaluated_depsgraph_get()
 
-            geometry.apply_modifiers_via_depsgraph(obj, depsgraph)
+            apply_modifiers_via_depsgraph(obj, depsgraph)
 
         return obj
 
@@ -67,12 +131,14 @@ class GRIDFINITY_OT_create_bin(GridfinityBaseOperator):
     def execute(self, context):
         params = self.get_base_params(context)
 
-        obj = geometry.create_bin_mesh(
+        bm_bin = geometry.create_bin_mesh(
             params['nx'],
             params['ny'],
             params['height_mm'],
             params['thickness_mm']
         )
+
+        obj = create_object_from_bmesh("Gridfinity_Bin", bm_bin, context.collection)
 
         self.report({'INFO'}, "Gridfinity bin with inner bottom bevel created.")
 
@@ -88,12 +154,14 @@ class GRIDFINITY_OT_create_solid_bin(GridfinityBaseOperator):
     def execute(self, context):
         params = self.get_base_params(context)
 
-        obj = geometry.create_solid_bin_mesh(
+        bm_bin = geometry.create_solid_bin_mesh(
             params['nx'],
             params['ny'],
             params['height_mm'],
             params['thickness_mm']
         )
+
+        obj = create_object_from_bmesh("Gridfinity_Solid_Bin", bm_bin, context.collection)
 
         self.report({'INFO'}, "Solid Gridfinity bin with 2mm rim and inner bevel created.")
 
@@ -128,12 +196,14 @@ class GRIDFINITY_OT_create_baseplate_with_bin(GridfinityBaseOperator):
         baseplate_obj = self.generate_processed_baseplate(context, params)
         self.finalize_object(context, baseplate_obj, f"Gridfinity_Baseplate_{params['nx']}x{params['ny']}")
 
-        bin_obj = geometry.create_bin_mesh(
+        bm_bin = geometry.create_bin_mesh(
             params['nx'],
             params['ny'],
             params['height_mm'],
             params['thickness_mm']
         )
+
+        bin_obj = create_object_from_bmesh("Gridfinity_Bin", bm_bin, context.collection)
 
         self.report({'INFO'}, "Gridfinity baseplate with hollow bin created.")
 
@@ -152,12 +222,14 @@ class GRIDFINITY_OT_create_baseplate_with_solid_bin(GridfinityBaseOperator):
         baseplate_obj = self.generate_processed_baseplate(context, params)
         self.finalize_object(context, baseplate_obj, f"Gridfinity_Baseplate_{params['nx']}x{params['ny']}")
 
-        bin_obj = geometry.create_solid_bin_mesh(
+        bm_bin = geometry.create_solid_bin_mesh(
             params['nx'],
             params['ny'],
             params['height_mm'],
             params['thickness_mm']
         )
+
+        bin_obj = create_object_from_bmesh("Gridfinity_Solid_Bin", bm_bin, context.collection)
 
         self.report({'INFO'}, "Gridfinity baseplate with solid bin created.")
 
@@ -176,14 +248,27 @@ class GRIDFINITY_OT_create_stacking_lip_array(GridfinityBaseOperator):
         ny = params['ny']
 
         try:
-            final_obj = geometry.generate_lip_array(nx, ny, params['use_magnets'], params['use_infill'])
+            verts, faces = geometry.generate_lip_array(nx, ny, params['use_magnets'], params['use_infill'])
         except Exception as e:
             self.report({'ERROR'}, str(e))
             return {'CANCELLED'}
 
-        if not final_obj:
+        if not verts:
             self.report({'ERROR'}, "Failed to generate lip array geometry")
             return {'CANCELLED'}
+
+        mesh = bpy.data.meshes.new(f"Gridfinity_Lip_Array_{nx}x{ny}_Mesh")
+        mesh.from_pydata(verts, [], faces)
+        mesh.update()
+
+        bm = bmesh.new()
+        bm.from_mesh(mesh)
+        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0001)
+        bm.to_mesh(mesh)
+        bm.free()
+
+        final_obj = bpy.data.objects.new(f"Gridfinity_Lip_Array_{nx}x{ny}", mesh)
+        context.collection.objects.link(final_obj)
 
         self.report({'INFO'}, f"Merged array {nx}x{ny} generated successfully")
 
@@ -209,36 +294,47 @@ class GRIDFINITY_OT_create_drawer_fitted_grid(GridfinityBaseOperator):
         ny = int((drawer_y / pitch_mm) + 1)
 
         try:
-            grid_obj = geometry.generate_lip_array(nx, ny, params['use_magnets'], params['use_infill'])
+            verts, faces = geometry.generate_lip_array(nx, ny, params['use_magnets'], params['use_infill'])
         except Exception as e:
             self.report({'ERROR'}, str(e))
             return {'CANCELLED'}
 
-        if not grid_obj:
+        if not verts:
             self.report({'ERROR'}, "Array generation failed")
             return {'CANCELLED'}
 
-        context.collection.objects.link(grid_obj)
-
-        mesh = bpy.data.meshes.new("Drawer_Cutter_Mesh")
-        cutter = bpy.data.objects.new("Drawer_Cutter_Temp", mesh)
-        context.collection.objects.link(cutter)
+        mesh = bpy.data.meshes.new(f"Gridfinity_Drawer_Grid_Mesh")
+        mesh.from_pydata(verts, [], faces)
+        mesh.update()
 
         bm = bmesh.new()
-        bmesh.ops.create_cube(bm, size=1.0)
+        bm.from_mesh(mesh)
+        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0001)
+        bm.to_mesh(mesh)
+        bm.free()
+
+        grid_obj = bpy.data.objects.new("Gridfinity_Drawer_Grid", mesh)
+        context.collection.objects.link(grid_obj)
+
+        cutter_mesh = bpy.data.meshes.new("Drawer_Cutter_Mesh")
+        cutter = bpy.data.objects.new("Drawer_Cutter_Temp", cutter_mesh)
+        context.collection.objects.link(cutter)
+
+        bm_cutter = bmesh.new()
+        bmesh.ops.create_cube(bm_cutter, size=1.0)
 
         size_x = (drawer_x * 0.001) + 1.0
         size_y = (drawer_y * 0.001) + 1.0
         size_z = 1.0
 
-        bmesh.ops.scale(bm, vec=(size_x, size_y, size_z), verts=bm.verts)
+        bmesh.ops.scale(bm_cutter, vec=(size_x, size_y, size_z), verts=bm_cutter.verts)
 
         loc_x = ((drawer_x * 0.001) - 1.0) / 2.0
         loc_y = ((drawer_y * 0.001) - 1.0) / 2.0
-        bmesh.ops.translate(bm, vec=(loc_x, loc_y, 0.0), verts=bm.verts)
+        bmesh.ops.translate(bm_cutter, vec=(loc_x, loc_y, 0.0), verts=bm_cutter.verts)
 
-        bm.to_mesh(mesh)
-        bm.free()
+        bm_cutter.to_mesh(cutter_mesh)
+        bm_cutter.free()
 
         bool_mod = grid_obj.modifiers.new(name="Drawer_Cut", type='BOOLEAN')
         bool_mod.operation = 'INTERSECT'
@@ -246,10 +342,10 @@ class GRIDFINITY_OT_create_drawer_fitted_grid(GridfinityBaseOperator):
         bool_mod.solver = 'FAST'
 
         context.view_layer.update()
-        geometry.apply_modifiers_via_depsgraph(grid_obj, params['depsgraph'])
+        apply_modifiers_via_depsgraph(grid_obj, params['depsgraph'])
 
         bpy.data.objects.remove(cutter, do_unlink=True)
-        bpy.data.meshes.remove(mesh)
+        bpy.data.meshes.remove(cutter_mesh)
 
         self.report({'INFO'}, f"Grid fitted to {int(drawer_x)}mm x {int(drawer_y)}mm")
 
