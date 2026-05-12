@@ -58,10 +58,17 @@ class GridfinityProperties(bpy.types.PropertyGroup):
     )
     lid_thickness: bpy.props.FloatProperty(
         name="Lid Thickness",
-        default=2.0)
+        default=2.0
+    )
     lid_tolerance: bpy.props.FloatProperty(
         name="Fit Tolerance",
-        default=0.15)
+        default=0.15
+    )
+    lid_add_profile: bpy.props.BoolProperty(
+    name="Add Stacking Profile",
+    description="Add a top profile for stacking bins on the lid",
+    default=False
+    )
 
 def register():
     bpy.utils.register_class(GridfinityProperties)

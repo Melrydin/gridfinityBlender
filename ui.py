@@ -44,6 +44,7 @@ class VIEW3D_PT_gridfinity_panel(bpy.types.Panel):
         box_lid.label(text="Lid Generator", icon='MOD_SOLIDIFY')
         box_lid.prop(props, "lid_thickness", text="Lid Thickness mm")
         box_lid.prop(props, "lid_tolerance", text="Tolerance mm")
+        box_lid.prop(props, "lid_add_profile", text="Add Stacking Profile")
         box_lid.operator("gridfinity.create_lid", text="Create Fitted Lid", icon='MESH_PLANE')
 
         layout.separator()

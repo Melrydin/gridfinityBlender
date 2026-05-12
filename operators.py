@@ -141,6 +141,9 @@ class GRIDFINITY_OT_create_lid(GridfinityBaseOperator):
 
         )
 
+        if props.lid_add_profile:
+            bm_lid = geometry.apply_stacking_profile_to_lid(bm_lid)
+
         obj = create_object_from_bmesh("Gridfinity_Lid", bm_lid, context.collection)
 
         self.report({'INFO'}, "Gridfinity lid created.")

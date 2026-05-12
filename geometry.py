@@ -200,6 +200,46 @@ def create_lid_mesh(nx, ny, thickness_mm, wall_thickness_mm, tolerance_mm):
 
     return bm
 
+def apply_stacking_profile_to_lid(bm):
+    """
+    Extends the top face of the lid upwards and extrudes the
+    Gridfinity negative profile cavity into it.
+    """
+    bm.faces.ensure_lookup_table()
+
+    top_face = max(bm.faces, key=lambda f: f.calc_center_median().z)
+
+    lip_total_height = 0.0044
+    extrude_up = bmesh.ops.extrude_face_region(bm, geom=[top_face])
+    top_verts = [elem for elem in extrude_up['geom'] if isinstance(elem, bmesh.types.BMVert)]
+    bmesh.ops.translate(bm, vec=(0.0, 0.0, lip_total_height), verts=top_verts)
+
+    current_top_face = None
+    for elem in extrude_up['geom']:
+        if isinstance(elem, bmesh.types.BMFace) and elem.normal.z > 0.9:
+            current_top_face = elem
+            break
+
+    if not current_top_face:
+        return bm
+
+    bmesh.ops.inset_region(bm, faces=[current_top_face], thickness=0.0019, depth=-0.0019)
+
+    bmesh.ops.inset_region(bm, faces=[current_top_face], thickness=0.0, depth=-0.0018)
+
+    bmesh.ops.inset_region(bm, faces=[current_top_face], thickness=0.0007, depth=-0.0007)
+
+    extrude_drop = bmesh.ops.extrude_face_region(bm, geom=[current_top_face])
+    drop_verts = [elem for elem in extrude_drop['geom'] if isinstance(elem, bmesh.types.BMVert)]
+    bmesh.ops.translate(bm, vec=(0.0, 0.0, -0.00045), verts=drop_verts)
+
+    bm.verts.ensure_lookup_table()
+    bm.edges.ensure_lookup_table()
+    bm.faces.ensure_lookup_table()
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+
+    return bm
+
 def generate_lip_array(nx, ny, use_magnets, use_infill):
     """
     Generates the merged lip array purely via data structures and matrix math,
