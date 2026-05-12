@@ -123,6 +123,32 @@ class GridfinityBaseOperator(bpy.types.Operator):
         return obj
 
 
+class GRIDFINITY_OT_create_lid(GridfinityBaseOperator):
+    """Create a flush fitting lid for standard bins"""
+    bl_idname = "gridfinity.create_lid"
+    bl_label = "Create Gridfinity Lid"
+
+    def execute(self, context):
+        params = self.get_base_params(context)
+        props = context.scene.gridfinity
+
+        bm_lid = geometry.create_lid_mesh(
+            params['nx'],
+            params['ny'],
+            props.lid_thickness,
+            props.bin_wall_thickness,
+            props.lid_tolerance
+
+        )
+
+        obj = create_object_from_bmesh("Gridfinity_Lid", bm_lid, context.collection)
+
+        self.report({'INFO'}, "Gridfinity lid created.")
+
+        final_name = f"Gridfinity_Lid_{params['nx']}x{params['ny']}_T{int(props.lid_thickness)}"
+        return self.finalize_object(context, obj, final_name)
+
+
 class GRIDFINITY_OT_create_bin(GridfinityBaseOperator):
     """Create a hollow Gridfinity bin on top of the baseplate with inner bottom bevel"""
     bl_idname = "gridfinity.create_bin"
@@ -361,6 +387,7 @@ def register():
     bpy.utils.register_class(GRIDFINITY_OT_create_baseplate_with_solid_bin)
     bpy.utils.register_class(GRIDFINITY_OT_create_stacking_lip_array)
     bpy.utils.register_class(GRIDFINITY_OT_create_drawer_fitted_grid)
+    bpy.utils.register_class(GRIDFINITY_OT_create_lid)
 
 
 def unregister():
@@ -371,3 +398,4 @@ def unregister():
     bpy.utils.unregister_class(GRIDFINITY_OT_create_baseplate_with_solid_bin)
     bpy.utils.unregister_class(GRIDFINITY_OT_create_stacking_lip_array)
     bpy.utils.unregister_class(GRIDFINITY_OT_create_drawer_fitted_grid)
+    bpy.utils.unregister_class(GRIDFINITY_OT_create_lid)

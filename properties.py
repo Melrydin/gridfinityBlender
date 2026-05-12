@@ -56,6 +56,12 @@ class GridfinityProperties(bpy.types.PropertyGroup):
         description="Use filled baseplates (flat T and filled X)",
         default=False
     )
+    lid_thickness: bpy.props.FloatProperty(
+        name="Lid Thickness",
+        default=2.0)
+    lid_tolerance: bpy.props.FloatProperty(
+        name="Fit Tolerance",
+        default=0.15)
 
 def register():
     bpy.utils.register_class(GridfinityProperties)

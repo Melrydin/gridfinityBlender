@@ -40,6 +40,14 @@ class VIEW3D_PT_gridfinity_panel(bpy.types.Panel):
 
         layout.separator()
 
+        box_lid = layout.box()
+        box_lid.label(text="Lid Generator", icon='MOD_SOLIDIFY')
+        box_lid.prop(props, "lid_thickness", text="Lid Thickness mm")
+        box_lid.prop(props, "lid_tolerance", text="Tolerance mm")
+        box_lid.operator("gridfinity.create_lid", text="Create Fitted Lid", icon='MESH_PLANE')
+
+        layout.separator()
+
         box_comp = layout.box()
         box_comp.label(text="Standalone Components")
         box_comp.operator("gridfinity.create_baseplate", text="Baseplate Only")

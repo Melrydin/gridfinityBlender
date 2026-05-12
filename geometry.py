@@ -154,6 +154,51 @@ def _apply_top_inset_and_bevel(bm, thickness, extrude_depth):
 
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
 
+def create_lid_mesh(nx, ny, thickness_mm, wall_thickness_mm, tolerance_mm):
+    """
+    Create a Gridfinity lid base and extrude the inner alignment plug.
+    """
+    bm = bmesh.new()
+
+    width = (nx * GRIDFINITY_PITCH) - GRIDFINITY_CLEARANCE
+    depth = (ny * GRIDFINITY_PITCH) - GRIDFINITY_CLEARANCE
+    thickness = thickness_mm * 0.001
+    plug_height = 0.003
+
+    bmesh.ops.create_cube(bm, size=1.0)
+    bmesh.ops.scale(bm, vec=(width, depth, thickness), verts=bm.verts)
+
+    center_z = plug_height + (thickness / 2.0)
+    bmesh.ops.translate(bm, vec=(0.0, 0.0, center_z), verts=bm.verts)
+
+    vertical_edges = [e for e in bm.edges if abs(e.verts[0].co.z - e.verts[1].co.z) > 0.0001]
+
+    bmesh.ops.bevel(
+        bm,
+        geom=vertical_edges,
+        offset=0.0075,
+        segments=16,
+        profile=0.5,
+        affect='EDGES'
+    )
+
+    bm.faces.ensure_lookup_table()
+    bottom_face = min(bm.faces, key=lambda f: f.calc_center_median().z)
+
+    inset_thickness = (wall_thickness_mm + (tolerance_mm / 2.0)) * 0.001
+    bmesh.ops.inset_region(bm, faces=[bottom_face], thickness=inset_thickness)
+
+    extrude_result = bmesh.ops.extrude_face_region(bm, geom=[bottom_face])
+    extruded_verts = [elem for elem in extrude_result['geom'] if isinstance(elem, bmesh.types.BMVert)]
+
+    bmesh.ops.translate(bm, vec=(0.0, 0.0, -plug_height), verts=extruded_verts)
+
+    bm.verts.ensure_lookup_table()
+    bm.edges.ensure_lookup_table()
+    bm.faces.ensure_lookup_table()
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+
+    return bm
 
 def generate_lip_array(nx, ny, use_magnets, use_infill):
     """
