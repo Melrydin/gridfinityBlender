@@ -79,7 +79,8 @@ class GridfinityBaseOperator(bpy.types.Operator):
             'thickness_mm': props.bin_wall_thickness,
             'use_magnets': props.use_magnets,
             'use_infill': props.use_infill,
-            'depsgraph': context.evaluated_depsgraph_get()
+            'depsgraph': context.evaluated_depsgraph_get(),
+            'bin_add_profile': props.bin_add_profile
         }
 
     def finalize_object(self, context, obj, name):
@@ -164,7 +165,8 @@ class GRIDFINITY_OT_create_bin(GridfinityBaseOperator):
             params['nx'],
             params['ny'],
             params['height_mm'],
-            params['thickness_mm']
+            params['thickness_mm'],
+            params['bin_add_profile']
         )
 
         obj = create_object_from_bmesh("Gridfinity_Bin", bm_bin, context.collection)
@@ -187,7 +189,8 @@ class GRIDFINITY_OT_create_solid_bin(GridfinityBaseOperator):
             params['nx'],
             params['ny'],
             params['height_mm'],
-            params['thickness_mm']
+            params['thickness_mm'],
+            params['bin_add_profile']
         )
 
         obj = create_object_from_bmesh("Gridfinity_Solid_Bin", bm_bin, context.collection)
@@ -229,7 +232,8 @@ class GRIDFINITY_OT_create_baseplate_with_bin(GridfinityBaseOperator):
             params['nx'],
             params['ny'],
             params['height_mm'],
-            params['thickness_mm']
+            params['thickness_mm'],
+            params['bin_add_profile']
         )
 
         bin_obj = create_object_from_bmesh("Gridfinity_Bin", bm_bin, context.collection)
@@ -255,7 +259,8 @@ class GRIDFINITY_OT_create_baseplate_with_solid_bin(GridfinityBaseOperator):
             params['nx'],
             params['ny'],
             params['height_mm'],
-            params['thickness_mm']
+            params['thickness_mm'],
+            params['bin_add_profile']
         )
 
         bin_obj = create_object_from_bmesh("Gridfinity_Solid_Bin", bm_bin, context.collection)

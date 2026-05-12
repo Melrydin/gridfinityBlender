@@ -74,7 +74,7 @@ def create_magnet_cutter():
     return c_bm
 
 
-def create_bin_mesh(nx, ny, height_mm, thickness_mm):
+def create_bin_mesh(nx, ny, height_mm, thickness_mm, add_profile=False):
     """
     Create a hollow Gridfinity bin bmesh.
     """
@@ -82,19 +82,22 @@ def create_bin_mesh(nx, ny, height_mm, thickness_mm):
     thickness = thickness_mm * 0.001
     extrude_depth = height - thickness
 
-    _apply_top_inset_and_bevel(bm, thickness, extrude_depth)
+    _apply_top_inset_and_bevel(bm, thickness, extrude_depth, add_profile)
     return bm
 
 
-def create_solid_bin_mesh(nx, ny, height_mm, thickness_mm):
+def create_solid_bin_mesh(nx, ny, height_mm, thickness_mm, add_profile=False):
     """
     Create a solid Gridfinity bin bmesh.
     """
-    bm, height = _create_base_bin_geometry(nx, ny, height_mm)
+    bm, _ = _create_base_bin_geometry(nx, ny, height_mm)
     thickness = thickness_mm * 0.001
     rim_depth = 0.002
+    if add_profile:
+        rim_depth += 0.0044
 
-    _apply_top_inset_and_bevel(bm, thickness, rim_depth)
+
+    _apply_top_inset_and_bevel(bm, thickness, rim_depth, add_profile)
     return bm
 
 
@@ -128,9 +131,14 @@ def _create_base_bin_geometry(nx, ny, height_mm):
     return bm, height
 
 
-def _apply_top_inset_and_bevel(bm, thickness, extrude_depth):
+def _apply_top_inset_and_bevel(bm, thickness, extrude_depth, add_profile):
     top_face = max(bm.faces, key=lambda f: f.calc_center_median().z)
-    bmesh.ops.inset_region(bm, faces=[top_face], thickness=thickness)
+
+    if add_profile:
+        top_face, profile_depth = _apply_bin_top_profile(bm, top_face)
+        extrude_depth -= profile_depth
+    else:
+        bmesh.ops.inset_region(bm, faces=[top_face], thickness=thickness)
 
     geom_to_extrude = [top_face] + list(top_face.edges)
     extrude_result = bmesh.ops.extrude_face_region(bm, geom=geom_to_extrude)
@@ -143,16 +151,43 @@ def _apply_top_inset_and_bevel(bm, thickness, extrude_depth):
 
     inner_bottom_edges = [e for e in bm.edges if e.verts[0] in extruded_verts and e.verts[1] in extruded_verts]
 
-    bmesh.ops.bevel(
-        bm,
-        geom=inner_bottom_edges,
-        offset=0.001,
-        segments=8,
-        profile=0.5,
-        affect='EDGES'
-    )
+    if inner_bottom_edges:
+        bmesh.ops.bevel(
+            bm,
+            geom=inner_bottom_edges,
+            offset=0.001,
+            segments=8,
+            profile=0.5,
+            affect='EDGES'
+        )
+
+    if add_profile:
+        all_top_facing = [f for f in bm.faces if f.normal.z > 0.9]
+
+        if all_top_facing:
+            target_face = max(all_top_facing, key=lambda f: f.calc_center_median().z)
+            bmesh.ops.delete(bm, geom=[target_face], context='FACES_ONLY')
 
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+
+def _apply_bin_top_profile(bm, top_face):
+    """
+    Creates the stacking lip profile on the top face of the bin.
+    Returns the inner face and the Z depth of the profile.
+    """
+
+    bmesh.ops.inset_region(bm, faces=[top_face], thickness=0.0019, depth=-0.0019)
+
+    bmesh.ops.inset_region(bm, faces=[top_face], thickness=0.0, depth=-0.0018)
+
+    bmesh.ops.inset_region(bm, faces=[top_face], thickness=0.0007, depth=-0.0007)
+
+    extrude_drop = bmesh.ops.extrude_face_region(bm, geom=[top_face])
+    drop_verts = [elem for elem in extrude_drop['geom'] if isinstance(elem, bmesh.types.BMVert)]
+    bmesh.ops.translate(bm, vec=(0.0, 0.0, -0.00045), verts=drop_verts)
+
+    profile_depth = 0.0044
+    return top_face, profile_depth
 
 def create_lid_mesh(nx, ny, thickness_mm, wall_thickness_mm, tolerance_mm):
     """

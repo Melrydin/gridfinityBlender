@@ -69,6 +69,11 @@ class GridfinityProperties(bpy.types.PropertyGroup):
     description="Add a top profile for stacking bins on the lid",
     default=False
     )
+    bin_add_profile: bpy.props.BoolProperty(
+    name="Add Stacking Profile",
+    description="Add the top profile for stacking bins",
+    default=False
+    )
 
 def register():
     bpy.utils.register_class(GridfinityProperties)
