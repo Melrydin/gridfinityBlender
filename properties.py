@@ -74,6 +74,17 @@ class GridfinityProperties(bpy.types.PropertyGroup):
     description="Add the top profile for stacking bins",
     default=False
     )
+    use_official_height: bpy.props.BoolProperty(
+    name="Use Official Units",
+    description="Use official Gridfinity Z units instead of absolute millimeters",
+    default=True
+    )
+    gridfinity_z: bpy.props.IntProperty(
+        name="Gridfinity Z Units",
+        description="Height in 7mm Gridfinity standard units",
+        default=6,
+        min=1
+    )
 
 def register():
     bpy.utils.register_class(GridfinityProperties)

@@ -72,10 +72,16 @@ class GridfinityBaseOperator(bpy.types.Operator):
 
     def get_base_params(self, context):
         props = context.scene.gridfinity
+
+        if props.use_official_height:
+            actual_height_mm = props.gridfinity_z * 7.0
+        else:
+            actual_height_mm = props.bin_height
+
         return {
             'nx': props.x,
             'ny': props.y,
-            'height_mm': props.bin_height,
+            'height_mm': actual_height_mm,
             'thickness_mm': props.bin_wall_thickness,
             'use_magnets': props.use_magnets,
             'use_infill': props.use_infill,
@@ -83,8 +89,7 @@ class GridfinityBaseOperator(bpy.types.Operator):
             'bin_add_profile': props.bin_add_profile,
             'lid_thickness': props.lid_thickness,
             'bin_wall_thickness': props.bin_wall_thickness,
-            'lid_tolerance': props.lid_tolerance,
-            'bin_add_profile': props.bin_add_profile
+            'lid_tolerance': props.lid_tolerance
         }
 
     def finalize_object(self, context, obj, name):
