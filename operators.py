@@ -80,6 +80,10 @@ class GridfinityBaseOperator(bpy.types.Operator):
             'use_magnets': props.use_magnets,
             'use_infill': props.use_infill,
             'depsgraph': context.evaluated_depsgraph_get(),
+            'bin_add_profile': props.bin_add_profile,
+            'lid_thickness': props.lid_thickness,
+            'bin_wall_thickness': props.bin_wall_thickness,
+            'lid_tolerance': props.lid_tolerance,
             'bin_add_profile': props.bin_add_profile
         }
 
@@ -131,18 +135,16 @@ class GRIDFINITY_OT_create_lid(GridfinityBaseOperator):
 
     def execute(self, context):
         params = self.get_base_params(context)
-        props = context.scene.gridfinity
 
         bm_lid = geometry.create_lid_mesh(
             params['nx'],
             params['ny'],
-            props.lid_thickness,
-            props.bin_wall_thickness,
-            props.lid_tolerance
-
+            params['lid_thickness'],
+            params['bin_wall_thickness'],
+            params['lid_tolerance']
         )
 
-        if props.lid_add_profile:
+        if params['bin_add_profile']:
             bm_lid = geometry.apply_stacking_profile_to_lid(bm_lid)
 
         obj = create_object_from_bmesh("Gridfinity_Lid", bm_lid, context.collection)
