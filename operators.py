@@ -89,7 +89,8 @@ class GridfinityBaseOperator(bpy.types.Operator):
             'bin_add_profile': props.bin_add_profile,
             'lid_thickness': props.lid_thickness,
             'bin_wall_thickness': props.bin_wall_thickness,
-            'lid_tolerance': props.lid_tolerance
+            'lid_tolerance': props.lid_tolerance,
+            'stackable_baseplate': props.stackable_baseplate
         }
 
     def finalize_object(self, context, obj, name):
@@ -289,7 +290,7 @@ class GRIDFINITY_OT_create_stacking_lip_array(GridfinityBaseOperator):
         ny = params['ny']
 
         try:
-            verts, faces = geometry.generate_lip_array(nx, ny, params['use_magnets'], params['use_infill'])
+            verts, faces = geometry.generate_lip_array(nx, ny, params['use_magnets'], params['use_infill'], params['stackable_baseplate'])
         except Exception as e:
             self.report({'ERROR'}, str(e))
             return {'CANCELLED'}
@@ -304,7 +305,7 @@ class GRIDFINITY_OT_create_stacking_lip_array(GridfinityBaseOperator):
 
         bm = bmesh.new()
         bm.from_mesh(mesh)
-        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0001)
+        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.000001)
         bm.to_mesh(mesh)
         bm.free()
 
@@ -335,7 +336,7 @@ class GRIDFINITY_OT_create_drawer_fitted_grid(GridfinityBaseOperator):
         ny = int((drawer_y / pitch_mm) + 1)
 
         try:
-            verts, faces = geometry.generate_lip_array(nx, ny, params['use_magnets'], params['use_infill'])
+            verts, faces = geometry.generate_lip_array(nx, ny, params['use_magnets'], params['use_infill'], params['stackable_baseplate'])
         except Exception as e:
             self.report({'ERROR'}, str(e))
             return {'CANCELLED'}
@@ -350,7 +351,7 @@ class GRIDFINITY_OT_create_drawer_fitted_grid(GridfinityBaseOperator):
 
         bm = bmesh.new()
         bm.from_mesh(mesh)
-        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0001)
+        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.000001)
         bm.to_mesh(mesh)
         bm.free()
 

@@ -19,6 +19,7 @@ class VIEW3D_PT_gridfinity_panel(bpy.types.Panel):
 
         box_unit.prop(props, "use_magnets", text="Add Magnet Holders")
         box_unit.prop(props, "use_infill", text="Solid Baseplate Infill")
+        box_unit.prop(props, "stackable_baseplate", text="Stackable Baseplate")
 
         layout.separator()
 

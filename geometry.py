@@ -275,29 +275,19 @@ def apply_stacking_profile_to_lid(bm):
 
     return bm
 
-def generate_lip_array(nx, ny, use_magnets, use_infill):
+def generate_lip_array(nx, ny, use_magnets, use_infill, stackable_baseplate):
     """
     Generates the merged lip array purely via data structures and matrix math,
     returning raw vertex coordinates and face indices.
     """
-    if use_magnets:
-        if use_infill:
-            obj_l = load_reference_object("Gridfinity_baseplate_L_magnet")
-            obj_t = load_reference_object("Gridfinity_baseplate_T_magnet_filled")
-            obj_x = load_reference_object("Gridfinity_baseplate_X_magnet_filled")
-        else:
-            obj_l = load_reference_object("Gridfinity_baseplate_L_magnet")
-            obj_t = load_reference_object("Gridfinity_baseplate_T_magnet")
-            obj_x = load_reference_object("Gridfinity_baseplate_X_magnet")
-    else:
-        if use_infill:
-            obj_l = load_reference_object("Gridfinity_baseplate_L")
-            obj_t = load_reference_object("Gridfinity_baseplate_T_filled")
-            obj_x = load_reference_object("Gridfinity_baseplate_X_filled")
-        else:
-            obj_l = load_reference_object("Gridfinity_baseplate_L")
-            obj_t = load_reference_object("Gridfinity_baseplate_T")
-            obj_x = load_reference_object("Gridfinity_baseplate_X")
+
+    suffix_stack = "_stackable" if stackable_baseplate else ""
+    suffix_mag = "_magnet" if use_magnets else ""
+    suffix_fill = "_filled" if use_infill else ""
+
+    obj_l = load_reference_object(f"Gridfinity_baseplate_L{suffix_mag}{suffix_stack}")
+    obj_t = load_reference_object(f"Gridfinity_baseplate_T{suffix_mag}{suffix_fill}{suffix_stack}")
+    obj_x = load_reference_object(f"Gridfinity_baseplate_X{suffix_mag}{suffix_fill}{suffix_stack}")
 
     grid = [[True for _ in range(ny)] for _ in range(nx)]
 

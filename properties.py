@@ -85,6 +85,11 @@ class GridfinityProperties(bpy.types.PropertyGroup):
         default=6,
         min=1
     )
+    stackable_baseplate: bpy.props.BoolProperty(
+    name="Stackable Baseplate",
+    description="Generates the standard Gridfinity profile on the underside",
+    default=False
+    )
 
 def register():
     bpy.utils.register_class(GridfinityProperties)
