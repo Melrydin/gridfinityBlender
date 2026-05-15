@@ -74,7 +74,7 @@ def create_magnet_cutter():
     return c_bm
 
 
-def create_bin_mesh(nx, ny, height_mm, thickness_mm, add_profile=False):
+def create_bin_mesh(nx, ny, height_mm, thickness_mm, add_profile=False, add_label_tab=False):
     """
     Create a hollow Gridfinity bin bmesh.
     """
@@ -83,6 +83,10 @@ def create_bin_mesh(nx, ny, height_mm, thickness_mm, add_profile=False):
     extrude_depth = height - thickness
 
     _apply_top_inset_and_bevel(bm, thickness, extrude_depth, add_profile)
+
+    if add_label_tab:
+        _apply_label_tab(bm)
+
     return bm
 
 
@@ -188,6 +192,81 @@ def _apply_bin_top_profile(bm, top_face):
 
     profile_depth = 0.0044
     return top_face, profile_depth
+
+def _apply_label_tab(bm):
+    """
+    Creates an angled label tab strictly on the inner front wall of the bin
+    with triangular tapered top corners.
+    """
+    bm.faces.ensure_lookup_table()
+
+    front_faces = [
+        f for f in bm.faces
+        if f.normal.y > 0.999
+        and f.calc_center_median().z > 0.005
+        and f.calc_center_median().y < 0.0
+    ]
+
+    if not front_faces:
+        return
+
+    main_front_face = max(front_faces, key=lambda f: f.calc_area())
+
+    cavity_top_z = max(v.co.z for v in main_front_face.verts)
+    cavity_bottom_z = min(v.co.z for v in main_front_face.verts)
+
+    tab_height = 0.012
+    tab_angle_depth = 0.005
+
+    tab_top_z = cavity_top_z - 0.001
+    tab_bottom_z = tab_top_z - tab_height
+
+    if tab_bottom_z <= cavity_bottom_z:
+        tab_bottom_z = cavity_bottom_z + 0.001
+
+    all_geom_1 = bm.faces[:] + bm.edges[:] + bm.verts[:]
+    bmesh.ops.bisect_plane(bm, geom=all_geom_1, plane_co=(0.0, 0.0, tab_bottom_z), plane_no=(0.0, 0.0, 1.0))
+
+    bm.faces.ensure_lookup_table()
+    all_geom_2 = bm.faces[:] + bm.edges[:] + bm.verts[:]
+    bmesh.ops.bisect_plane(bm, geom=all_geom_2, plane_co=(0.0, 0.0, tab_top_z), plane_no=(0.0, 0.0, 1.0))
+
+    bm.faces.ensure_lookup_table()
+
+    target_faces = [
+        f for f in bm.faces
+        if f.normal.y > 0.999
+        and f.calc_center_median().z > tab_bottom_z + 0.0001
+        and f.calc_center_median().z < tab_top_z - 0.0001
+        and f.calc_center_median().y < 0.0
+    ]
+
+    if not target_faces:
+        return
+
+    extrude_res = bmesh.ops.extrude_face_region(bm, geom=target_faces)
+    extruded_verts = [elem for elem in extrude_res['geom'] if isinstance(elem, bmesh.types.BMVert)]
+
+    bmesh.ops.delete(bm, geom=target_faces, context='FACES_ONLY')
+
+    bmesh.ops.translate(bm, vec=(0.0, tab_angle_depth, 0.0), verts=extruded_verts)
+
+    bottom_verts = [v for v in extruded_verts if abs(v.co.z - tab_bottom_z) < 0.0005]
+    bmesh.ops.translate(bm, vec=(0.0, -tab_angle_depth, 0.0), verts=bottom_verts)
+
+    min_x = min(v.co.x for v in extruded_verts)
+    max_x = max(v.co.x for v in extruded_verts)
+    side_margin = 0.004
+
+    left_top_verts = [v for v in extruded_verts if abs(v.co.x - min_x) < 0.0005 and v not in bottom_verts]
+    right_top_verts = [v for v in extruded_verts if abs(v.co.x - max_x) < 0.0005 and v not in bottom_verts]
+
+    bmesh.ops.translate(bm, vec=(side_margin, 0.0, 0.0), verts=left_top_verts)
+    bmesh.ops.translate(bm, vec=(-side_margin, 0.0, 0.0), verts=right_top_verts)
+
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.00005)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+
 
 def create_lid_mesh(nx, ny, thickness_mm, wall_thickness_mm, tolerance_mm):
     """

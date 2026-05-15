@@ -90,7 +90,8 @@ class GridfinityBaseOperator(bpy.types.Operator):
             'lid_thickness': props.lid_thickness,
             'bin_wall_thickness': props.bin_wall_thickness,
             'lid_tolerance': props.lid_tolerance,
-            'stackable_baseplate': props.stackable_baseplate
+            'stackable_baseplate': props.stackable_baseplate,
+            'bin_add_label_tab': props.bin_add_label_tab
         }
 
     def finalize_object(self, context, obj, name):
@@ -174,7 +175,8 @@ class GRIDFINITY_OT_create_bin(GridfinityBaseOperator):
             params['ny'],
             params['height_mm'],
             params['thickness_mm'],
-            params['bin_add_profile']
+            params['bin_add_profile'],
+            params['bin_add_label_tab']
         )
 
         obj = create_object_from_bmesh("Gridfinity_Bin", bm_bin, context.collection)
@@ -241,7 +243,8 @@ class GRIDFINITY_OT_create_baseplate_with_bin(GridfinityBaseOperator):
             params['ny'],
             params['height_mm'],
             params['thickness_mm'],
-            params['bin_add_profile']
+            params['bin_add_profile'],
+            params['bin_add_label_tab']
         )
 
         bin_obj = create_object_from_bmesh("Gridfinity_Bin", bm_bin, context.collection)

@@ -90,6 +90,11 @@ class GridfinityProperties(bpy.types.PropertyGroup):
     description="Generates the standard Gridfinity profile on the underside",
     default=False
     )
+    bin_add_label_tab: bpy.props.BoolProperty(
+        name="Add Label Tab",
+        description="Add an angled inner tab for adhesive labels",
+        default=False
+    )
 
 def register():
     bpy.utils.register_class(GridfinityProperties)
