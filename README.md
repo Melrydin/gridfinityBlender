@@ -29,6 +29,7 @@ The Gridfinity organizational system was invented by Zack Freedman. Discover mor
 
 #### Dimension Settings
 - **Grid Size:** Define the exact number of 42mm base units in X and Y directions
+- **Height Units:** Choose between official 7mm Gridfinity units or custom millimeter values
 - **Bin Parameters:** Customize total bin height and wall thickness (in millimeters)
 - **Drawer Constraints:** Specify maximum drawer dimensions for precise fitting
 - **Real-time Preview:** Adjust parameters and see changes instantly
@@ -38,6 +39,9 @@ The Gridfinity organizational system was invented by Zack Freedman. Discover mor
 #### Complete Generation Modes
 - **Baseplate + Hollow Bin:** Unified object with standard baseplate and hollow storage bin
 - **Baseplate + Solid Bin:** Unified object with baseplate and solid block (includes stacking rim)
+- **Optional Stacking Profiles:** Add standardized stacking profiles to bins and lids for seamless component stacking
+- **Optional Label Tabs:** Angled inner tabs on bin front walls for adhesive label placement
+- **Stackable Baseplates:** Generate Gridfinity-profile underside for stacking multiple grids
 
 #### Drawer Fit Mode
 The intelligent fitting system automatically:
@@ -45,6 +49,12 @@ The intelligent fitting system automatically:
 - Generates perfectly aligned baseplates
 - Uses precise boolean intersection to cut edges to exact millimeter limits
 - Preserves unit integrity and origin points
+
+#### Lid Generation
+- **Fitted Lid Creator:** Generate precision-fit lids with inner alignment plugs for secure seating
+- **Lid Stacking Profiles:** Optional profiles on lid tops for stacking bins on top of closed containers
+- **Adjustable Tolerance:** Fine-tune fit tolerance for different printer calibrations
+- **Customizable Thickness:** Set lid thickness to match your design requirements
 
 #### Standalone Components
 - **Baseplate Only:** Single flat array at standard 4.75mm height
@@ -98,6 +108,27 @@ The intelligent fitting system automatically:
 
 ### Workflow Examples
 
+#### Generating a Stackable Grid System
+1. Create your base grid (e.g., 4×3 with official 6 Z-units height)
+2. Enable **Stackable Baseplate** for stacking capability
+3. Create a second grid layer above the first
+4. Both grids will nest perfectly when printed
+5. Export all components and stack after printing
+
+#### Creating Bins with Labels
+1. Set grid dimensions and customize height
+2. Enable **Add Label Tab** option for front wall tabs
+3. Generate your bins
+4. After printing, apply adhesive labels to the angled tabs
+5. Labels won't interfere with insertion/removal
+
+#### Creating Fitted Lids
+1. Set dimensions matching your bin grid (e.g., 4×3)
+2. Adjust **Lid Thickness** and **Tolerance** as needed
+3. Optional: Enable **Add Stacking Profile** to stack bins on closed lids
+4. Click **Create Fitted Lid**
+5. Test fit and export
+
 #### Creating a Fitted Drawer Organizer
 1. Measure your drawer: 300mm × 200mm × 80mm
 2. Set **Drawer Constraints** to these dimensions
@@ -114,6 +145,16 @@ The intelligent fitting system automatically:
 
 ## Advanced Features
 
+### Stacking System
+- **Multi-Level Organization:** Create vertically stacked storage configurations
+- **Stacking Profiles:** Both bins and lids support optional Gridfinity-standard stacking profiles
+- **Stackable Baseplates:** Underside profiles allow grids to stack on top of each other
+- **Perfect Alignment:** Automatic positioning ensures clean, stable stacking
+
+### Labeling System
+- **Built-in Label Tabs:** Optional angled inner tabs for adhesive label placement
+- **Front Wall Tabs:** Angled geometry prevents label edges from catching
+
 ### Magnet Baseplate Support
 Full support for magnetic baseplate configurations enables compatible components with magnetic organizing systems.
 
@@ -121,6 +162,7 @@ Full support for magnetic baseplate configurations enables compatible components
 - Automatic vertex merging for clean topology
 - Internal wall removal for 3D printing efficiency
 - Precise beveling on outer corners for manifold meshes
+- Corrected normal extrusion for reliable boolean operations
 
 ## Troubleshooting
 
@@ -143,6 +185,7 @@ This addon is provided under the terms specified in the [LICENSE](LICENSE) file.
 
 ---
 
-**Created by:** Clemens
-**Last Updated:** May 2026
-**Blender Compatibility:** 4.5.9 LTS - Latest
+**Created by:** Clemens, Melrydin
+**Last Updated:** May 15, 2026
+**Blender Compatibility:** 4.5+ (LTS and Latest)
+**Current Development Version:** 0.3.0-dev
