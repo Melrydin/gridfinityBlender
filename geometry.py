@@ -139,6 +139,8 @@ def _apply_top_inset_and_bevel(bm, thickness, extrude_depth, add_profile):
     top_face = max(bm.faces, key=lambda f: f.calc_center_median().z)
 
     if add_profile:
+        top_face.normal_flip()
+        bm.normal_update()
         top_face, profile_depth = _apply_bin_top_profile(bm, top_face)
         extrude_depth -= profile_depth
     else:
@@ -166,11 +168,18 @@ def _apply_top_inset_and_bevel(bm, thickness, extrude_depth, add_profile):
         )
 
     if add_profile:
-        all_top_facing = [f for f in bm.faces if f.normal.z > 0.9]
+        bm.normal_update()
+        bm.faces.ensure_lookup_table()
 
-        if all_top_facing:
-            target_face = max(all_top_facing, key=lambda f: f.calc_center_median().z)
-            bmesh.ops.delete(bm, geom=[target_face], context='FACES_ONLY')
+        flat_faces = [f for f in bm.faces if abs(f.normal.z) > 0.9]
+
+        if flat_faces:
+            flat_faces.sort(key=lambda f: f.calc_area(), reverse=True)
+            largest_candidates = flat_faces[:2]
+            target_face = max(largest_candidates, key=lambda f: f.calc_center_median().z)
+
+            verts_to_delete = list(target_face.verts)
+            bmesh.ops.delete(bm, geom=verts_to_delete, context='VERTS')
 
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
 
@@ -180,11 +189,11 @@ def _apply_bin_top_profile(bm, top_face):
     Returns the inner face and the Z depth of the profile.
     """
 
-    bmesh.ops.inset_region(bm, faces=[top_face], thickness=0.0019, depth=-0.0019)
+    bmesh.ops.inset_region(bm, faces=[top_face], thickness=0.0019, depth=0.0019)
 
-    bmesh.ops.inset_region(bm, faces=[top_face], thickness=0.0, depth=-0.0018)
+    bmesh.ops.inset_region(bm, faces=[top_face], thickness=0.0, depth=0.0018)
 
-    bmesh.ops.inset_region(bm, faces=[top_face], thickness=0.0007, depth=-0.0007)
+    bmesh.ops.inset_region(bm, faces=[top_face], thickness=0.0007, depth=0.0007)
 
     extrude_drop = bmesh.ops.extrude_face_region(bm, geom=[top_face])
     drop_verts = [elem for elem in extrude_drop['geom'] if isinstance(elem, bmesh.types.BMVert)]
