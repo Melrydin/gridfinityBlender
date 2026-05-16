@@ -95,6 +95,20 @@ class GridfinityProperties(bpy.types.PropertyGroup):
         description="Add an angled inner tab for adhesive labels",
         default=False
     )
+    label_text: bpy.props.StringProperty(
+        name="Label Text",
+        description="Text to engrave or emboss on the tab",
+        default=""
+    )
+    label_style: bpy.props.EnumProperty(
+        name="Label Style",
+        description="Choose between raised or engraved text",
+        items=[
+            ('EMBOSSED', "Embossed", "Raised text"),
+            ('DEBOSSED', "Debossed", "Engraved text")
+        ],
+        default='DEBOSSED'
+    )
 
 def register():
     bpy.utils.register_class(GridfinityProperties)

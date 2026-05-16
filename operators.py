@@ -67,6 +67,44 @@ def center_origin_to_bounds(obj):
     obj.location = (0.0, 0.0, min_z)
 
 
+def apply_tab_label(context, target_obj, params):
+
+    text_obj = geometry.create_tab_text_object(params)
+    context.collection.objects.link(text_obj)
+    context.view_layer.update()
+
+    depsgraph = context.evaluated_depsgraph_get()
+    eval_obj = text_obj.evaluated_get(depsgraph)
+    mesh = bpy.data.meshes.new_from_object(eval_obj)
+
+    mesh_obj = bpy.data.objects.new("LabelMesh", mesh)
+    mesh_obj.matrix_world = text_obj.matrix_world
+    context.collection.objects.link(mesh_obj)
+
+    curve_data = text_obj.data
+    bpy.data.objects.remove(text_obj, do_unlink=True)
+    bpy.data.curves.remove(curve_data)
+
+    bool_mod = target_obj.modifiers.new(name="LabelBool", type='BOOLEAN')
+    bool_mod.operation = 'UNION' if params['label_style'] == 'EMBOSSED' else 'DIFFERENCE'
+    bool_mod.object = mesh_obj
+    bool_mod.solver = 'EXACT'
+
+    context.view_layer.update()
+
+    fresh_depsgraph = context.evaluated_depsgraph_get()
+
+    apply_modifiers_via_depsgraph(target_obj, fresh_depsgraph)
+
+    mesh_data = mesh_obj.data
+    bpy.data.objects.remove(mesh_obj, do_unlink=True)
+    bpy.data.meshes.remove(mesh_data)
+
+    context.view_layer.update()
+
+    return target_obj
+
+
 class GridfinityBaseOperator(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -91,7 +129,9 @@ class GridfinityBaseOperator(bpy.types.Operator):
             'bin_wall_thickness': props.bin_wall_thickness,
             'lid_tolerance': props.lid_tolerance,
             'stackable_baseplate': props.stackable_baseplate,
-            'bin_add_label_tab': props.bin_add_label_tab
+            'bin_add_label_tab': props.bin_add_label_tab,
+            'label_text': props.label_text,
+            'label_style': props.label_style
         }
 
     def finalize_object(self, context, obj, name):
@@ -158,7 +198,7 @@ class GRIDFINITY_OT_create_lid(GridfinityBaseOperator):
 
         self.report({'INFO'}, "Gridfinity lid created.")
 
-        final_name = f"Gridfinity_Lid_{params['nx']}x{params['ny']}_T{int(props.lid_thickness)}"
+        final_name = f"Gridfinity_Lid_{params['nx']}x{params['ny']}_T{int(params['lid_thickness'])}"
         return self.finalize_object(context, obj, final_name)
 
 
@@ -180,6 +220,9 @@ class GRIDFINITY_OT_create_bin(GridfinityBaseOperator):
         )
 
         obj = create_object_from_bmesh("Gridfinity_Bin", bm_bin, context.collection)
+
+        if params['bin_add_label_tab'] and params['label_text']:
+            apply_tab_label(context, obj, params)
 
         self.report({'INFO'}, "Gridfinity bin with inner bottom bevel created.")
 
@@ -248,6 +291,9 @@ class GRIDFINITY_OT_create_baseplate_with_bin(GridfinityBaseOperator):
         )
 
         bin_obj = create_object_from_bmesh("Gridfinity_Bin", bm_bin, context.collection)
+
+        if params['bin_add_label_tab'] and params['label_text']:
+            apply_tab_label(context, bin_obj, params)
 
         self.report({'INFO'}, "Gridfinity baseplate with hollow bin created.")
 

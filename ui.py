@@ -36,6 +36,12 @@ class VIEW3D_PT_gridfinity_panel(bpy.types.Panel):
         box_ui.prop(props, "bin_wall_thickness", text="Wall Thickness mm")
         box_ui.prop(props, "bin_add_profile", text="Add Stacking Profile")
         box_ui.prop(props, "bin_add_label_tab", text="Add Label Tab")
+
+        if props.bin_add_label_tab:
+            box_label = box_ui.box()
+            box_label.prop(props, "label_text", text="Tab Text")
+            box_label.prop(props, "label_style", text="Text Style")
+
         box_ui.operator("gridfinity.create_baseplate_with_bin", text="Baseplate + Hollow Bin", icon='PACKAGE')
         box_ui.operator("gridfinity.create_baseplate_with_solid_bin", text="Baseplate + Solid Bin", icon='CUBE')
 

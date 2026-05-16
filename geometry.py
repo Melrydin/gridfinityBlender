@@ -224,8 +224,8 @@ def _apply_label_tab(bm):
     cavity_top_z = max(v.co.z for v in main_front_face.verts)
     cavity_bottom_z = min(v.co.z for v in main_front_face.verts)
 
-    tab_height = 0.012
-    tab_angle_depth = 0.005
+    tab_height = 0.01
+    tab_angle_depth = 0.006
 
     tab_top_z = cavity_top_z - 0.001
     tab_bottom_z = tab_top_z - tab_height
@@ -276,6 +276,36 @@ def _apply_label_tab(bm):
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.00005)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
 
+def create_tab_text_object(params):
+    """
+    Creates a text curve object positioned and rotated for the label tab.
+    Does not link to the scene or evaluate modifiers.
+    """
+
+    total_height = GRIDFINITY_BASE_HEIGHT + (params['height_mm'] * 0.001)
+    tab_top_z = total_height - 0.001
+
+    center_z = tab_top_z
+
+    depth_y = (params['ny'] * GRIDFINITY_PITCH) - GRIDFINITY_CLEARANCE
+    inner_front_y = -(depth_y / 2.0) + (params['thickness_mm'] * 0.001)
+    center_y = inner_front_y + 0.0025
+
+    curve = bpy.data.curves.new(type="FONT", name="LabelCurve")
+    curve.body = params['label_text']
+    curve.align_x = 'CENTER'
+    curve.align_y = 'CENTER'
+
+    extrude_depth = min(0.6, params['thickness_mm'] * 0.5) * 0.001
+    curve.extrude = extrude_depth
+
+    text_obj = bpy.data.objects.new("LabelObj_Temp", curve)
+    text_obj.location = (0.0, center_y, center_z)
+
+    text_obj.scale = (0.005, 0.005, 1.0)
+    text_obj.rotation_euler = (0.0, 0.0, math.radians(180))
+
+    return text_obj
 
 def create_lid_mesh(nx, ny, thickness_mm, wall_thickness_mm, tolerance_mm):
     """
