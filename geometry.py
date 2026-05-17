@@ -8,6 +8,8 @@ GRIDFINITY_PITCH = 0.042
 GRIDFINITY_CLEARANCE = 0.0005
 GRIDFINITY_BASE_HEIGHT = 0.00475
 
+_GEOMETRY_CACHE = {}
+
 
 def create_baseplate_unit_mesh():
     """
@@ -395,17 +397,10 @@ def apply_stacking_profile_to_lid(bm):
 
 def generate_lip_array(nx, ny, use_magnets, use_infill, stackable_baseplate):
     """
-    Generates the merged lip array purely via data structures and matrix math,
-    returning raw vertex coordinates and face indices.
+    Generates the merged lip array purely via data structures and matrix math.
+    Uses highly optimized list comprehensions and a separate cache function.
     """
-
-    suffix_stack = "_stackable" if stackable_baseplate else ""
-    suffix_mag = "_magnet" if use_magnets else ""
-    suffix_fill = "_filled" if use_infill else ""
-
-    obj_l = load_reference_object(f"Gridfinity_baseplate_L{suffix_mag}{suffix_stack}")
-    obj_t = load_reference_object(f"Gridfinity_baseplate_T{suffix_mag}{suffix_fill}{suffix_stack}")
-    obj_x = load_reference_object(f"Gridfinity_baseplate_X{suffix_mag}{suffix_fill}{suffix_stack}")
+    precalc_data = get_cached_geometry(use_magnets, use_infill, stackable_baseplate)
 
     grid = [[True for _ in range(ny)] for _ in range(nx)]
 
@@ -414,23 +409,16 @@ def generate_lip_array(nx, ny, use_magnets, use_infill, stackable_baseplate):
             return grid[cx][cy]
         return False
 
-    state_lookup = {
-        (True, False, False, False): (obj_l, math.radians(180)),
-        (False, True, False, False): (obj_l, math.radians(-90)),
-        (False, False, True, False): (obj_l, math.radians(0)),
-        (False, False, False, True): (obj_l, math.radians(90)),
-        (True, True, False, False):  (obj_t, math.radians(180)),
-        (False, True, True, False):  (obj_t, math.radians(-90)),
-        (False, False, True, True):  (obj_t, math.radians(0)),
-        (True, False, False, True):  (obj_t, math.radians(90)),
-        (True, True, True, True):    (obj_x, math.radians(0))
-    }
-
     all_verts = []
     all_faces = []
     vert_offset = 0
 
+    pitch = GRIDFINITY_PITCH
+    append_verts = all_verts.extend
+    append_faces = all_faces.extend
+
     for x in range(nx + 1):
+        tx = x * pitch
         for y in range(ny + 1):
             tr = cell_exists(x, y)
             tl = cell_exists(x - 1, y)
@@ -439,39 +427,18 @@ def generate_lip_array(nx, ny, use_magnets, use_infill, stackable_baseplate):
 
             state = (tr, tl, bl, br)
 
-            if state not in state_lookup:
+            if state not in precalc_data:
                 continue
 
-            source_obj, rotation_z = state_lookup[state]
-            source_mesh = source_obj.data
+            base_verts, base_faces = precalc_data[state]
+            ty = y * pitch
 
-            matrix = mathutils.Matrix.Translation((x * GRIDFINITY_PITCH, y * GRIDFINITY_PITCH, 0.0)) @ mathutils.Matrix.Rotation(rotation_z, 4, 'Z')
+            append_verts([(vx + tx, vy + ty, vz) for vx, vy, vz in base_verts])
+            append_faces([[fv + vert_offset for fv in face] for face in base_faces])
 
-            for v in source_mesh.vertices:
-                all_verts.append(matrix @ v.co)
-
-            for p in source_mesh.polygons:
-                all_faces.append([v + vert_offset for v in p.vertices])
-
-            vert_offset += len(source_mesh.vertices)
-
-    mesh_l = obj_l.data
-    mesh_t = obj_t.data
-    mesh_x = obj_x.data
-
-    bpy.data.objects.remove(obj_l, do_unlink=True)
-    bpy.data.objects.remove(obj_t, do_unlink=True)
-    bpy.data.objects.remove(obj_x, do_unlink=True)
-
-    if mesh_l.users == 0:
-        bpy.data.meshes.remove(mesh_l)
-    if mesh_t.users == 0:
-        bpy.data.meshes.remove(mesh_t)
-    if mesh_x.users == 0:
-        bpy.data.meshes.remove(mesh_x)
+            vert_offset += len(base_verts)
 
     return all_verts, all_faces
-
 
 def load_reference_object(object_name):
     """
@@ -494,3 +461,59 @@ def load_reference_object(object_name):
         raise RuntimeError(f"Failed to load object '{object_name}'")
 
     return data_to.objects[0]
+
+def get_cached_geometry(use_magnets, use_infill, stackable_baseplate):
+    """
+    Retrieves precalculated geometry from the cache or generates it if missing.
+    Handles all Blender API interactions and disk I/O.
+    """
+    global _GEOMETRY_CACHE
+
+    cache_key = (use_magnets, use_infill, stackable_baseplate)
+
+    if cache_key not in _GEOMETRY_CACHE:
+        suffix_stack = "_stackable" if stackable_baseplate else ""
+        suffix_mag = "_magnet" if use_magnets else ""
+        suffix_fill = "_filled" if use_infill else ""
+
+        obj_l = load_reference_object(f"Gridfinity_baseplate_L{suffix_mag}{suffix_stack}")
+        obj_t = load_reference_object(f"Gridfinity_baseplate_T{suffix_mag}{suffix_fill}{suffix_stack}")
+        obj_x = load_reference_object(f"Gridfinity_baseplate_X{suffix_mag}{suffix_fill}{suffix_stack}")
+
+        state_lookup = {
+            (True, False, False, False): (obj_l, math.radians(180)),
+            (False, True, False, False): (obj_l, math.radians(-90)),
+            (False, False, True, False): (obj_l, math.radians(0)),
+            (False, False, False, True): (obj_l, math.radians(90)),
+            (True, True, False, False):  (obj_t, math.radians(180)),
+            (False, True, True, False):  (obj_t, math.radians(-90)),
+            (False, False, True, True):  (obj_t, math.radians(0)),
+            (True, False, False, True):  (obj_t, math.radians(90)),
+            (True, True, True, True):    (obj_x, math.radians(0))
+        }
+
+        precalc_data = {}
+        for state, (obj, rot_z) in state_lookup.items():
+            rot_mat = mathutils.Matrix.Rotation(rot_z, 4, 'Z')
+            base_verts = [(rot_mat @ v.co)[:] for v in obj.data.vertices]
+            base_faces = [list(p.vertices) for p in obj.data.polygons]
+            precalc_data[state] = (base_verts, base_faces)
+
+        _GEOMETRY_CACHE[cache_key] = precalc_data
+
+        mesh_l = obj_l.data
+        mesh_t = obj_t.data
+        mesh_x = obj_x.data
+
+        bpy.data.objects.remove(obj_l, do_unlink=True)
+        bpy.data.objects.remove(obj_t, do_unlink=True)
+        bpy.data.objects.remove(obj_x, do_unlink=True)
+
+        if mesh_l.users == 0:
+            bpy.data.meshes.remove(mesh_l)
+        if mesh_t.users == 0:
+            bpy.data.meshes.remove(mesh_t)
+        if mesh_x.users == 0:
+            bpy.data.meshes.remove(mesh_x)
+
+    return _GEOMETRY_CACHE[cache_key]
